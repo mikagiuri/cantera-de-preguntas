@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Genera cientos de preguntas tipo test a partir de una lista de conceptos filosóficos con sus definiciones y expórtalas a un examen, Google Classroom, Kahoot o Moodle.">
+<title>Cantera de preguntas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* reset básico (en GitHub Pages no hay el marco del artefacto) */
+html{-webkit-text-size-adjust:100%}
+body{margin:0}
+[hidden]{display:none!important}
+img{max-width:100%}
+/* Paleta y tipografía del «Aula de Filosofía» (IES Martín de Bertendona), para que la herramienta
+   se sienta de la misma casa que la web del departamento. */
+:root{
+  --bg:#f0ece3; --surface:#faf8f3; --surface-2:#f4f1ea; --ink:#22242b; --muted:#5f6270;
+  --line:#ddd6c9; --line-soft:#e7e1d6;
+  --accent:#1f5d5a; --accent-2:#2b7a75; --on-accent:#f7fbf9; --accent-soft:#dfeae7;
+  --ok:#2f7a4d; --ok-bg:#e5f0e6; --warn:#9a6a22; --warn-bg:#f5ecd9;
+  --shadow:0 1px 2px rgba(30,28,22,.05), 0 6px 20px -12px rgba(30,28,22,.28);
+  --serif:"Spectral",Georgia,"Times New Roman",serif;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#141519; --surface:#1c1e25; --surface-2:#232631; --ink:#e9e6df; --muted:#a3a3b0;
+    --line:#31343f; --line-soft:#2a2c35;
+    --accent:#54b3ac; --accent-2:#6fc7c0; --on-accent:#0c1413; --accent-soft:#1d3331;
+    --ok:#7bc98f; --ok-bg:#1c2f22; --warn:#d6a75a; --warn-bg:#2f2718;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 26px -14px rgba(0,0,0,.6);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#141519; --surface:#1c1e25; --surface-2:#232631; --ink:#e9e6df; --muted:#a3a3b0;
+  --line:#31343f; --line-soft:#2a2c35;
+  --accent:#54b3ac; --accent-2:#6fc7c0; --on-accent:#0c1413; --accent-soft:#1d3331;
+  --ok:#7bc98f; --ok-bg:#1c2f22; --warn:#d6a75a; --warn-bg:#2f2718;
+  --shadow:0 1px 2px rgba(0,0,0,.3), 0 10px 26px -14px rgba(0,0,0,.6);
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;cursor:pointer}
+:focus-visible{outline:2.5px solid var(--accent-2);outline-offset:2px;border-radius:4px}
+.wrap{max-width:1240px;margin:0 auto;padding-inline:20px;padding-block:22px 48px}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px 24px;margin-bottom:20px}
+.eyebrow{font-size:.72rem;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600;margin:0 0 4px}
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,4vw,2.6rem);line-height:1.05;margin:0;letter-spacing:-.01em}
+h1 em{font-style:italic;font-weight:400;color:var(--accent)}
+.lede{max-width:62ch;color:var(--muted);margin:8px 0 0}
+.stats{font-family:var(--mono);font-size:.82rem;color:var(--muted);display:flex;gap:14px;flex-wrap:wrap}
+.stats b{color:var(--ink);font-weight:500}
+
+.layout{display:grid;gap:22px;grid-template-columns:1fr}
+@media (min-width:980px){ .layout{grid-template-columns:minmax(330px,390px) 1fr;align-items:start} .side{position:sticky;top:calc(env(safe-area-inset-top,0px) + 14px)} }
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.side{padding:18px;display:flex;flex-direction:column;gap:16px}
+.side h2,.results h2{font-family:var(--serif);font-size:1.15rem;margin:0}
+label.lbl,.lbl{font-size:.72rem;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:var(--muted);display:block;margin-bottom:6px}
+textarea{width:100%;font-family:var(--mono);font-size:.8rem;line-height:1.55;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;resize:vertical}
+textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+#src{min-height:260px;max-height:48vh}
+.hint{font-size:.8rem;color:var(--muted);margin:6px 0 0}
+.hint code{font-family:var(--mono);font-size:.76rem;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:5px;padding:0 4px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.types{display:grid;grid-template-columns:1fr;gap:6px}
+.check{display:flex;gap:9px;align-items:flex-start;padding:7px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);cursor:pointer;font-size:.88rem}
+.check input{margin-top:3px;accent-color:var(--accent)}
+.check small{display:block;color:var(--muted);font-size:.78rem}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface-2)}
+.seg button{border:0;background:transparent;padding:5px 14px;font-size:.85rem;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--on-accent);font-weight:600}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--accent);background:var(--accent);color:var(--on-accent);border-radius:10px;padding:9px 16px;font-weight:600;font-size:.9rem}
+.btn:hover{background:var(--accent-2);border-color:var(--accent-2)}
+.btn.ghost{background:transparent;color:var(--accent)}
+.btn.ghost:hover{background:var(--accent-soft)}
+.btn.small{padding:5px 11px;font-size:.82rem;border-radius:8px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.msg{font-size:.84rem;border-radius:9px;padding:8px 11px;background:var(--warn-bg);color:var(--ink);border:1px solid var(--line)}
+
+.results{padding:0;overflow:hidden}
+.tabs{display:flex;gap:4px;padding:10px 12px 0;border-bottom:1px solid var(--line);background:var(--surface-2);flex-wrap:wrap}
+.tab{border:1px solid transparent;border-bottom:0;background:transparent;padding:9px 14px;border-radius:10px 10px 0 0;font-weight:600;color:var(--muted);font-size:.92rem;position:relative;top:1px}
+.tab[aria-selected="true"]{background:var(--surface);border-color:var(--line);color:var(--ink)}
+.tab .n{font-family:var(--mono);font-weight:500;font-size:.78rem;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:1px 8px;margin-left:6px}
+.pane{padding:16px}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-bottom:14px}
+.chip{border:1px solid var(--line);background:transparent;color:var(--muted);padding:4px 11px;border-radius:999px;font-size:.8rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);color:var(--ink);background:var(--accent-soft);font-weight:600}
+.search{flex:1;min-width:180px;padding:7px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink);font:inherit;font-size:.88rem}
+.toggle{display:inline-flex;gap:6px;align-items:center;font-size:.84rem;color:var(--muted)}
+.toggle input{accent-color:var(--accent)}
+
+.list{display:grid;gap:10px;grid-template-columns:1fr}
+@media (min-width:1360px){ .list{grid-template-columns:1fr 1fr} }
+.q{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:12px 14px 12px 12px;display:grid;grid-template-columns:auto 1fr;gap:4px 12px;transition:border-color .15s, background .15s}
+.q.sel{border-color:var(--accent);background:linear-gradient(0deg,var(--accent-soft),var(--accent-soft)) padding-box}
+.q .pick{grid-row:span 3;padding-top:2px}
+.q .pick input{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}
+.q .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.q .meta .t{color:var(--accent)}
+.q .meta .warn{color:var(--warn);text-transform:none;letter-spacing:0;font-weight:500}
+.q .stem{font-family:var(--serif);font-size:1.02rem;line-height:1.45}
+.q .stem q{quotes:"«" "»";font-style:italic}
+.q ol{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:3px;font-size:.88rem}
+.q li{display:grid;grid-template-columns:1.6em 1fr;gap:2px;padding:2px 6px;border-radius:6px}
+.q li .l{font-family:var(--mono);color:var(--muted)}
+.show-key .q li.ok{background:var(--ok-bg)}
+.show-key .q li.ok .l{color:var(--ok);font-weight:600}
+.show-key .q li.ok::after{content:""}
+.empty{color:var(--muted);padding:26px 4px;text-align:center}
+.more{display:flex;justify-content:center;margin-top:14px}
+
+.export{margin-top:18px;border-top:1px dashed var(--line);padding-top:16px;display:grid;gap:10px}
+.export h3{font-family:var(--serif);font-size:1.05rem;margin:0}
+#out{min-height:190px;font-size:.78rem}
+.fmt-note{font-size:.82rem;color:var(--muted);margin:0}
+.examopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 14px}
+.examopts .wide{grid-column:1/-1}
+.inp{width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink);font:inherit;font-size:.9rem}
+.inp:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var(--accent)}
+.steps{margin:0;padding-left:1.3em;font-size:.86rem;display:grid;gap:4px;max-width:75ch}
+/* vista previa del examen: hoja clara siempre, como el papel */
+.exam-preview{background:#fff;color:#1a1a1a;border:1px solid var(--line);border-radius:10px;padding:22px 26px;max-height:460px;overflow:auto;font-family:"Spectral",Georgia,serif;font-size:14px;line-height:1.45}
+.exam-preview h1{font-size:20px;margin:0 0 2px;font-family:inherit}
+.exam-preview .sub{margin:0 0 10px;color:#444}
+.exam-preview .blank{margin:0 0 10px}
+.exam-preview .instr{font-style:italic;margin:0 0 14px}
+.exam-preview ol.qs{padding-left:1.4em;margin:0}
+.exam-preview ol.qs > li{margin:0 0 12px}
+.exam-preview ol.op{list-style:lower-alpha;margin:4px 0 0;padding-left:1.4em}
+.exam-preview .key{border-top:2px solid #1a1a1a;margin-top:18px;padding-top:10px}
+.exam-preview .model{border-top:1px dashed #999;margin-top:22px;padding-top:14px}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 18px);transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;font-size:.86rem;box-shadow:var(--shadow)}
+@media (prefers-reduced-motion:reduce){ *{transition:none!important} }
+@media (max-width:520px){ .wrap{padding-inline:16px} #src{min-height:200px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow">Aula de Filosofía · herramienta del profesorado</p>
+      <h1>Cantera <em>de preguntas</em></h1>
+      <p class="lede">Pega tu lista de conceptos con sus definiciones y la cantera saca cientos de preguntas tipo test. Tú eliges las mejores y las llevas a un examen para imprimir, a Google Classroom, a Kahoot o a Moodle.</p>
+    </div>
+    <div class="stats" aria-live="polite"><span><b id="st-c">0</b> conceptos</span><span><b id="st-q">0</b> preguntas</span><span><b id="st-s">0</b> elegidas</span></div>
+  </header>
+
+  <div class="layout">
+    <aside class="panel side" aria-label="Conceptos y ajustes">
+      <div>
+        <label class="lbl" for="src">Conceptos</label>
+        <textarea id="src" spellcheck="false"></textarea>
+        <p class="hint">Una línea por concepto: <code>concepto: definición</code>. También sirve pegar dos columnas desde Excel o Sheets. Con <code># Tema</code> agrupas conceptos: las opciones falsas salen primero del mismo tema, para que sean creíbles. <b>Ejemplo cargado</b>, del glosario de HF.</p>
+      </div>
+      <div>
+        <span class="lbl">Tipos de pregunta</span>
+        <div class="types" id="types">
+          <label class="check"><input type="checkbox" value="def" checked><span>Definición → concepto<small>«¿Qué concepto se define así…?»</small></span></label>
+          <label class="check"><input type="checkbox" value="term" checked><span>Concepto → definición<small>«¿Cuál es la definición de…?»</small></span></label>
+          <label class="check"><input type="checkbox" value="vf" checked><span>Verdadero o falso<small>una definición correcta y otra cambiada</small></span></label>
+          <label class="check"><input type="checkbox" value="odd" checked><span>La pareja intrusa<small>«¿Qué pareja concepto–definición es incorrecta?»</small></span></label>
+        </div>
+      </div>
+      <div class="row" style="justify-content:space-between">
+        <div><span class="lbl">Opciones</span><div class="seg" id="nopt" role="group" aria-label="Número de opciones"><button data-v="3">3</button><button data-v="4" aria-pressed="true">4</button><button data-v="5">5</button></div></div>
+        <div><span class="lbl">Versiones por concepto</span><div class="seg" id="nvar" role="group" aria-label="Versiones por concepto y tipo"><button data-v="1">1</button><button data-v="2" aria-pressed="true">2</button><button data-v="3">3</button></div></div>
+      </div>
+      <div id="srcmsg" class="msg" hidden></div>
+      <div class="row">
+        <button class="btn" id="gen">Generar preguntas</button>
+        <button class="btn ghost" id="shuffle" title="Nuevas opciones falsas y otro orden; las elegidas se conservan">Barajar de nuevo</button>
+      </div>
+    </aside>
+
+    <section class="panel results" aria-label="Preguntas">
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" id="tab-gen" aria-selected="true" aria-controls="pane-gen">Generadas <span class="n" id="n-gen">0</span></button>
+        <button class="tab" role="tab" id="tab-sel" aria-selected="false" aria-controls="pane-sel">Elegidas <span class="n" id="n-sel">0</span></button>
+      </div>
+
+      <div class="pane" id="pane-gen" role="tabpanel" aria-labelledby="tab-gen">
+        <div class="toolbar">
+          <div class="row" id="tfilter" role="group" aria-label="Filtrar por tipo"></div>
+          <input class="search" id="q" type="search" placeholder="Filtrar por concepto o texto…" aria-label="Filtrar preguntas">
+          <label class="toggle"><input type="checkbox" id="key" checked> ver solución</label>
+          <button class="btn ghost small" id="pickall">Elegir las visibles</button>
+        </div>
+        <div class="list show-key" id="list-gen"></div>
+        <div class="more"><button class="btn ghost small" id="more" hidden>Mostrar más</button></div>
+      </div>
+
+      <div class="pane" id="pane-sel" role="tabpanel" aria-labelledby="tab-sel" hidden>
+        <div class="toolbar">
+          <span class="fmt-note" id="sel-note">Las preguntas que marques en «Generadas» se guardan aquí, aunque vuelvas a barajar.</span>
+          <button class="btn ghost small" id="clearsel">Vaciar elegidas</button>
+        </div>
+        <div class="list show-key" id="list-sel"></div>
+
+        <div class="export">
+          <h3>Exportar las elegidas</h3>
+          <div class="row" id="fmt" role="group" aria-label="Formato">
+            <button class="chip" data-f="exam" aria-pressed="true">Examen (Word / Google Docs)</button>
+            <button class="chip" data-f="classroom">Google Classroom (Forms)</button>
+            <button class="chip" data-f="kahoot">Kahoot</button>
+            <button class="chip" data-f="gift">Moodle (GIFT)</button>
+            <button class="chip" data-f="txt">Texto plano</button>
+            <button class="chip" data-f="tsv">Hoja de cálculo</button>
+          </div>
+          <div class="examopts" id="examopts">
+            <div class="field"><label class="lbl" for="ex-title">Título</label><input id="ex-title" class="inp" type="text"></div>
+            <div class="field"><label class="lbl" for="ex-course">Materia y curso</label><input id="ex-course" class="inp" type="text"></div>
+            <div class="field wide" id="f-instr"><label class="lbl" for="ex-instr">Instrucciones</label><input id="ex-instr" class="inp" type="text"></div>
+            <div class="field" id="f-models"><span class="lbl">Modelos</span><div class="seg" id="ex-models" role="group" aria-label="Número de modelos"><button data-v="1">Uno</button><button data-v="2">A y B</button></div></div>
+          </div>
+          <p class="fmt-note" id="fmt-note"></p>
+          <ol class="steps" id="steps" hidden>
+            <li>Abre <b>script.google.com</b> con tu cuenta del centro y pulsa <b>Nuevo proyecto</b>.</li>
+            <li>Borra lo que haya, pega el código de abajo y pulsa <b>Ejecutar</b> (▶). La primera vez Google pide permiso para crear formularios en tu Drive: acéptalo.</li>
+            <li>Abajo, en el <b>Registro de ejecución</b>, aparecen dos enlaces: el del formulario para editarlo y el que verá el alumnado.</li>
+            <li>En <b>Classroom</b>: Trabajo de clase → Crear → <b>Tarea</b> → Añadir → <b>Google Drive</b> → elige el formulario. Con «Importar calificaciones» las notas pasan solas a Classroom.</li>
+          </ol>
+          <div class="exam-preview" id="exprev" hidden aria-label="Vista previa del examen"></div>
+          <textarea id="out" readonly spellcheck="false" aria-label="Texto para copiar"></textarea>
+          <div class="row"><button class="btn" id="copy">Copiar</button><span class="fmt-note" id="kwarn"></span></div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script>
+"use strict";
+/* ===== Datos de ejemplo: glosario de Historia de la Filosofía (bloque A) del Aula ===== */
+const SAMPLE = `# Metafísica
+Arkhé: Palabra que designa el origen, fundamento o principio común de todas las cosas.
+Hilozoísmo: La visión de que la materia está viva por sí misma y dotada de movimiento; los físicos de Mileto entendieron el principio como algo viviente.
+Homeomerías: Según Anaxágoras, las semillas infinitamente pequeñas que componen la realidad, cada una con algo de todas las cosas.
+El vacío: Para los atomistas, el espacio no lleno que hace posible el movimiento.
+Dualismo ontológico: Distinguir la realidad en dos niveles: el mundo sensible cambiante y el mundo inteligible e inmutable de las Ideas.
+Hilemorfismo: La teoría según la cual los seres concretos se componen de materia y forma; la forma es la estructura misma de la cosa.
+Acto y potencia: La potencia es la posibilidad de ser; el acto, el estado en que esa posibilidad está realizada.
+Motor inmóvil: El primer principio del movimiento: acto puro que, sin cambiar él mismo, atrae todo lo demás como causa final.
+Las cuatro causas: La distinción aristotélica entre causa material, formal, eficiente y final para explicar las cosas.
+# Conocimiento y método
+Doxa: La opinión o creencia corriente; se mueve en el ámbito de los sentidos y las apariencias.
+Episteme: El conocimiento verdadero, que se alcanza cuando la razón comprende las Ideas y sus conexiones.
+Abstracción: El proceso por el cual el entendimiento, partiendo de las cosas particulares, distingue la forma general.
+Mayéutica: El método que ayuda a alumbrar el pensamiento mediante preguntas.
+Ironía socrática: Fingir ignorancia para poner a prueba las creencias firmes del interlocutor.
+Logos: Idea que reúne a la vez palabra, razón y discurso, y permite dar y debatir explicaciones.
+# Ética
+Areté: La excelencia o plenitud de una capacidad; en la ética clásica, la buena forma del carácter.
+Intelectualismo moral: La tesis socrática de que quien conoce de verdad el bien no obra mal a propósito.
+Ataraxia: La ausencia de perturbación y de miedo, condición de la vida buena para las escuelas helenísticas.
+Aponía: La ausencia de dolor en el cuerpo; en el epicureísmo, una condición de la vida feliz.
+Apatheia: No vivir a merced de las pasiones ciegas y cuidar el autogobierno racional, según los estoicos.
+Autarquía: La autosuficiencia razonable: depender lo menos posible de la fortuna externa.
+# Política
+Isonomía: El principio de que todos los ciudadanos son iguales ante la ley.
+Isegoría: El derecho igual de los ciudadanos a hablar en la asamblea.
+Nomos: La ley, la costumbre o el pacto social, frente a lo que es por naturaleza.
+Physis: La naturaleza, lo que es y crece por sí mismo, frente a la convención humana.`;
+
+const TYPES = { def: "Definición → concepto", term: "Concepto → definición", vf: "Verdadero o falso", odd: "Pareja intrusa" };
+const STORE = "cantera-preguntas-v1";
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fold = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+
+let state = { src: SAMPLE, types: ["def", "term", "vf", "odd"], nopt: 4, nvar: 2, seed: 1, selected: [], fmt: "exam",
+  exTitle: "Cuestionario: filosofía antigua", exCourse: "Historia de la Filosofía · 2.º de Bachillerato",
+  exInstr: "Elige una sola respuesta en cada pregunta. Cada acierto vale 1 punto.", models: 1 };
+try { const saved = JSON.parse(localStorage.getItem(STORE) || "null"); if (saved && typeof saved === "object") state = Object.assign(state, saved); } catch (e) {}
+function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
+
+/* ===== Lectura de la lista ===== */
+function parse(text){
+  const out = [], bad = []; let group = "";
+  text.split(/\r?\n/).forEach((raw, i) => {
+    const line = raw.trim();
+    if (!line) return;
+    if (line.startsWith("#")) { group = line.replace(/^#+\s*/, ""); return; }
+    let m = line.match(/^([^\t]+)\t+(.+)$/) || line.match(/^([^:]{1,80}):\s*(.+)$/) || line.match(/^(.{1,80}?)\s+[–—-]\s+(.+)$/);
+    if (!m) { bad.push(i + 1); return; }
+    const term = m[1].trim().replace(/^[-•*]\s*/, ""), def = m[2].trim();
+    if (term && def) out.push({ term, def, group });
+  });
+  const seen = new Set();
+  return { items: out.filter(c => { const k = fold(c.term); if (seen.has(k)) return false; seen.add(k); return true; }), bad };
+}
+
+/* ===== Azar reproducible ===== */
+function rng(seed){ let a = seed >>> 0; return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function hash(s){ let h = 2166136261; for (const ch of s) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+function shuffle(arr, r){ const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(r() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+/* ===== Opciones falsas creíbles: mismo tema, palabras en común y longitud parecida ===== */
+const STOP = new Set("el la los las un una unos unas de del al a en y o u que se su sus por para con sin es son lo como mas más no ni entre sobre segun según cada todo todas todos esta este esto ese esa sus".split(" "));
+const words = s => new Set(fold(s).split(/[^a-zñ]+/).filter(w => w.length > 3 && !STOP.has(w)));
+function distractors(c, all, k, r){
+  const wc = words(c.def);
+  const scored = all.filter(o => o !== c).map(o => {
+    const wo = words(o.def); let common = 0; wo.forEach(w => { if (wc.has(w)) common++; });
+    const len = 1 - Math.min(1, Math.abs(o.def.length - c.def.length) / Math.max(o.def.length, c.def.length));
+    return { o, s: (o.group && o.group === c.group ? 2 : 0) + common * .6 + len + r() * 1.4 };
+  }).sort((a, b) => b.s - a.s);
+  return scored.slice(0, k).map(x => x.o);
+}
+/* oculta el propio concepto dentro de su definición para que no se delate */
+function mask(def, term){
+  const base = term.replace(/^(el|la|los|las|lo)\s+/i, "").replace(/\s*\(.*?\)\s*/g, " ").trim();
+  if (base.length < 3) return def;
+  const re = new RegExp("(^|[^\\p{L}])(" + base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")(?=[^\\p{L}]|$)", "giu");
+  return def.replace(re, (m, pre) => pre + "……");
+}
+
+/* ===== Generación ===== */
+function makeQuestions(items){
+  const qs = [], k = state.nopt - 1;
+  items.forEach(c => {
+    for (let v = 0; v < state.nvar; v++){
+      const r = rng(hash(c.term + "|" + v + "|" + state.seed));
+      const ds = distractors(c, items, Math.max(k + 2, 4), r);
+      if (state.types.includes("def") && ds.length >= k){
+        const opts = shuffle([{ t: c.term, ok: true }].concat(ds.slice(0, k).map(d => ({ t: d.term }))), r);
+        qs.push({ type: "def", concept: c.term, stem: "¿Qué concepto se define así?", quote: mask(c.def, c.term), opts });
+      }
+      if (state.types.includes("term") && ds.length >= k){
+        const opts = shuffle([{ t: mask(c.def, c.term), ok: true }].concat(ds.slice(0, k).map(d => ({ t: mask(d.def, d.term) }))), r);
+        qs.push({ type: "term", concept: c.term, stem: "¿Cuál es la definición de «" + c.term + "»?", opts });
+      }
+      if (state.types.includes("vf") && ds.length){
+        const wrong = r() < .5;
+        const d = ds[Math.floor(r() * Math.min(ds.length, 3))];
+        qs.push({ type: "vf", concept: c.term, stem: "Verdadero o falso:", quote: c.term + ": " + (wrong ? mask(d.def, d.term) : c.def),
+          opts: [{ t: "Verdadero", ok: !wrong }, { t: "Falso", ok: wrong }] });
+      }
+      if (state.types.includes("odd") && ds.length >= k){
+        // la definición equivocada sale de un concepto que NO está entre las opciones (si no, se repetiría y delataría la respuesta)
+        const others = ds.slice(0, k), spare = ds.slice(k);
+        const wrongDef = spare.length ? spare[Math.floor(r() * spare.length)] : others[Math.floor(r() * others.length)];
+        const opts = shuffle([{ t: c.term + " — " + mask(wrongDef.def, wrongDef.term), ok: true }].concat(others.map(o => ({ t: o.term + " — " + mask(o.def, o.term) }))), r);
+        qs.push({ type: "odd", concept: c.term, stem: "¿Qué pareja concepto–definición es incorrecta?", opts });
+      }
+    }
+  });
+  qs.forEach(q => { q.id = hash(q.type + q.stem + (q.quote || "") + q.opts.map(o => o.t + (o.ok ? "*" : "")).join("|")).toString(36); });
+  return qs;
+}
+
+/* ===== Interfaz ===== */
+let items = [], pool = [], shown = 60, tfilter = "all", query = "";
+const selIds = () => new Set(state.selected.map(q => q.id));
+
+function cardHTML(q, sel){
+  const L = "abcde";
+  const long = q.opts.some(o => o.t.length > 75) || (q.stem + " " + (q.quote || "")).length > 120;
+  return '<article class="q' + (sel ? " sel" : "") + '" data-id="' + q.id + '">' +
+    '<label class="pick"><input type="checkbox"' + (sel ? " checked" : "") + ' aria-label="Elegir esta pregunta"></label>' +
+    '<div class="meta"><span class="t">' + TYPES[q.type] + '</span><span>' + esc(q.concept) + '</span>' +
+      (long ? '<span class="warn" title="Kahoot admite 120 caracteres en la pregunta y 75 en cada respuesta">larga para Kahoot</span>' : '') + '</div>' +
+    '<div class="stem">' + esc(q.stem) + (q.quote ? ' <q>' + esc(q.quote) + '</q>' : '') + '</div>' +
+    '<ol>' + q.opts.map((o, i) => '<li' + (o.ok ? ' class="ok"' : '') + '><span class="l">' + L[i] + ')</span><span>' + esc(o.t) + '</span></li>').join("") + '</ol>' +
+  '</article>';
+}
+function visible(){
+  const f = fold(query);
+  return pool.filter(q => (tfilter === "all" || q.type === tfilter) &&
+    (!f || fold(q.concept + " " + q.stem + " " + (q.quote || "") + " " + q.opts.map(o => o.t).join(" ")).includes(f)));
+}
+function renderGen(){
+  const box = $("#list-gen"), ids = selIds(), vis = visible();
+  box.innerHTML = vis.length ? vis.slice(0, shown).map(q => cardHTML(q, ids.has(q.id))).join("")
+    : '<p class="empty">' + (pool.length ? "Ninguna pregunta coincide con el filtro." : "Pega tus conceptos y pulsa «Generar preguntas».") + '</p>';
+  $("#more").hidden = vis.length <= shown;
+  $("#more").textContent = "Mostrar más (" + (vis.length - shown) + " restantes)";
+  counts();
+}
+function renderSel(){
+  const box = $("#list-sel");
+  box.innerHTML = state.selected.length ? state.selected.map(q => cardHTML(q, true)).join("")
+    : '<p class="empty">Aún no has elegido ninguna. Marca las casillas en «Generadas».</p>';
+  renderExport(); counts();
+}
+function counts(){
+  $("#st-c").textContent = items.length; $("#st-q").textContent = pool.length; $("#st-s").textContent = state.selected.length;
+  $("#n-gen").textContent = visible().length; $("#n-sel").textContent = state.selected.length;
+}
+function renderTypeFilter(){
+  const used = ["all"].concat(Object.keys(TYPES).filter(t => state.types.includes(t)));
+  if (!used.includes(tfilter)) tfilter = "all";
+  $("#tfilter").innerHTML = used.map(t => '<button class="chip" data-t="' + t + '" aria-pressed="' + (t === tfilter) + '">' + (t === "all" ? "Todas" : TYPES[t]) + '</button>').join("");
+}
+
+function generate(){
+  const { items: it, bad } = parse(state.src);
+  items = it;
+  const msg = $("#srcmsg");
+  const notes = [];
+  if (bad.length) notes.push("No entiendo " + (bad.length === 1 ? "la línea " : "las líneas ") + bad.slice(0, 8).join(", ") + (bad.length > 8 ? "…" : "") + ": escribe «concepto: definición».");
+  if (items.length && items.length < state.nopt) notes.push("Con " + state.nopt + " opciones necesitas al menos " + state.nopt + " conceptos.");
+  msg.hidden = !notes.length; msg.textContent = notes.join(" ");
+  pool = items.length >= 2 ? makeQuestions(items) : [];
+  shown = 60; renderTypeFilter(); renderGen(); renderSel(); save();
+}
+
+function toggle(q, on){
+  const i = state.selected.findIndex(x => x.id === q.id);
+  if (on && i < 0) state.selected.push(q);
+  if (!on && i >= 0) state.selected.splice(i, 1);
+  save();
+}
+function findQ(id){ return pool.find(q => q.id === id) || state.selected.find(q => q.id === id); }
+
+/* ===== Exportación ===== */
+const NOTES = {
+  exam: "Examen listo para imprimir: encabezado, espacio para el nombre, preguntas numeradas y la hoja de soluciones al final. «Copiar» lo copia con formato: pégalo en un documento de Word o Google Docs en blanco. Con «A y B» salen dos modelos con las preguntas y las opciones en distinto orden, cada uno con su clave.",
+  classroom: "Crea un cuestionario autocorregible de Google Forms (1 punto por pregunta, respuestas correctas ya marcadas) que se adjunta a una tarea de Classroom. Se hace una sola vez con este código:",
+  txt: "Texto sin formato, numerado y con la clave al final: útil para pegar en cualquier sitio.",
+  kahoot: "Filas separadas por tabuladores con el orden de la plantilla de Kahoot (pregunta, 4 respuestas, tiempo, respuesta correcta). Descarga la plantilla de Kahoot, pega en la primera fila de preguntas y súbela.",
+  gift: "Formato GIFT: en Moodle, Banco de preguntas → Importar → GIFT. Pega el texto en un archivo .txt en UTF-8.",
+  tsv: "Una fila por pregunta con cabecera; pega en Excel o Google Sheets y se reparte en columnas."
+};
+const giftEsc = s => s.replace(/([~=#{}:\\])/g, "\\$1");
+function fullStem(q){ return q.stem + (q.quote ? " «" + q.quote + "»" : ""); }
+function exportText(){
+  const S = state.selected, L = "abcde";
+  if (!S.length) return "";
+  if (state.fmt === "txt"){
+    const body = S.map((q, i) => (i + 1) + ". " + fullStem(q) + "\n" + q.opts.map((o, j) => "   " + L[j] + ") " + o.t).join("\n")).join("\n\n");
+    const key = S.map((q, i) => (i + 1) + "-" + L[q.opts.findIndex(o => o.ok)]).join("   ");
+    return body + "\n\nSOLUCIONES\n" + key;
+  }
+  if (state.fmt === "gift"){
+    return S.map((q, i) => {
+      const title = "::P" + (i + 1) + " · " + giftEsc(q.concept) + "::";
+      if (q.type === "vf") return title + giftEsc(fullStem(q)) + " {" + (q.opts[0].ok ? "T" : "F") + "}";
+      return title + giftEsc(fullStem(q)) + " {\n" + q.opts.map(o => "  " + (o.ok ? "=" : "~") + giftEsc(o.t)).join("\n") + "\n}";
+    }).join("\n\n");
+  }
+  if (state.fmt === "kahoot"){
+    return S.map(q => {
+      const a = q.opts.slice(0, 4).map(o => o.t); while (a.length < 4) a.push("");
+      const ok = q.opts.slice(0, 4).findIndex(o => o.ok) + 1;
+      return [fullStem(q)].concat(a, ["20", String(ok || 1)]).map(x => x.replace(/\t|\n/g, " ")).join("\t");
+    }).join("\n");
+  }
+  const head = ["Tipo", "Concepto", "Pregunta", "A", "B", "C", "D", "E", "Correcta"].join("\t");
+  return head + "\n" + S.map(q => {
+    const a = q.opts.map(o => o.t); while (a.length < 5) a.push("");
+    return [TYPES[q.type], q.concept, fullStem(q)].concat(a, [L[q.opts.findIndex(o => o.ok)].toUpperCase()]).map(x => x.replace(/\t|\n/g, " ")).join("\t");
+  }).join("\n");
+}
+/* ---- modelos del examen: A = orden de elección; B = preguntas y opciones barajadas ---- */
+function models(){
+  const S = state.selected;
+  if (state.models !== 2) return [{ label: "", qs: S }];
+  const r = rng(hash("modeloB|" + S.map(q => q.id).join(",")));
+  const B = shuffle(S, r).map(q => q.type === "vf" ? q : Object.assign({}, q, { opts: shuffle(q.opts, r) }));
+  return [{ label: "Modelo A", qs: S }, { label: "Modelo B", qs: B }];
+}
+function examHTML(){
+  const L = "abcde", h = s => esc(s);
+  const head = m => '<h1>' + h(state.exTitle) + (m.label ? ' · ' + h(m.label) : '') + '</h1>' +
+    (state.exCourse ? '<p class="sub">' + h(state.exCourse) + '</p>' : '') +
+    '<p class="blank">Nombre y apellidos: ________________________________________ &nbsp; Grupo: ______ &nbsp; Fecha: ___________</p>' +
+    (state.exInstr ? '<p class="instr">' + h(state.exInstr) + '</p>' : '');
+  const body = m => '<ol class="qs">' + m.qs.map(q => '<li>' + h(q.stem) + (q.quote ? ' «<i>' + h(q.quote) + '</i>»' : '') +
+    '<ol class="op" type="a">' + q.opts.map(o => '<li>' + h(o.t) + '</li>').join("") + '</ol></li>').join("") + '</ol>';
+  const ms = models();
+  const sheets = ms.map((m, i) => '<div' + (i ? ' class="model" style="page-break-before:always"' : '') + '>' + head(m) + body(m) + '</div>').join("");
+  const key = '<div class="key" style="page-break-before:always"><h2 style="font-size:16px;margin:0 0 6px">Soluciones (profesorado)</h2>' +
+    ms.map(m => '<p>' + (m.label ? '<b>' + h(m.label) + ':</b> ' : '') + m.qs.map((q, i) => (i + 1) + '-' + L[q.opts.findIndex(o => o.ok)]).join(" &nbsp; ") + '</p>').join("") + '</div>';
+  return sheets + key;
+}
+function examPlain(){
+  const L = "abcde";
+  return models().map(m => (m.label ? m.label.toUpperCase() + "\n" : "") + state.exTitle + "\n" + state.exCourse + "\nNombre y apellidos: ______________________   Grupo: ____   Fecha: ________\n" + state.exInstr + "\n\n" +
+    m.qs.map((q, i) => (i + 1) + ". " + fullStem(q) + "\n" + q.opts.map((o, j) => "   " + L[j] + ") " + o.t).join("\n")).join("\n\n")).join("\n\n\n") +
+    "\n\nSOLUCIONES\n" + models().map(m => (m.label ? m.label + ": " : "") + m.qs.map((q, i) => (i + 1) + "-" + L[q.opts.findIndex(o => o.ok)]).join("  ")).join("\n");
+}
+/* ---- script de Google Apps Script que crea el cuestionario de Forms ---- */
+function classroomScript(){
+  const data = { titulo: state.exTitle || "Cuestionario", descripcion: [state.exCourse, state.exInstr].filter(Boolean).join(" · "),
+    preguntas: state.selected.map(q => ({ p: fullStem(q), o: q.opts.map(o => o.t), c: q.opts.findIndex(o => o.ok) })) };
+  return "// Cantera de preguntas → cuestionario autocorregible de Google Forms (para Google Classroom).\n" +
+    "// Pega este código en script.google.com (Nuevo proyecto) y pulsa Ejecutar.\n" +
+    "const DATOS = " + JSON.stringify(data, null, 1) + ";\n\n" +
+    "function crearCuestionario() {\n" +
+    "  const form = FormApp.create(DATOS.titulo);\n" +
+    "  form.setDescription(DATOS.descripcion);\n" +
+    "  form.setIsQuiz(true);\n" +
+    "  DATOS.preguntas.forEach(function (q) {\n" +
+    "    const item = form.addMultipleChoiceItem();\n" +
+    "    item.setTitle(q.p).setPoints(1).setRequired(true);\n" +
+    "    item.setChoices(q.o.map(function (t, i) { return item.createChoice(t, i === q.c); }));\n" +
+    "  });\n" +
+    "  Logger.log('Editar el formulario: ' + form.getEditUrl());\n" +
+    "  Logger.log('Enlace para el alumnado: ' + form.getPublishedUrl());\n" +
+    "}\n";
+}
+function renderExport(){
+  document.querySelectorAll("#fmt .chip").forEach(b => b.setAttribute("aria-pressed", b.dataset.f === state.fmt));
+  $("#fmt-note").textContent = NOTES[state.fmt];
+  const exam = state.fmt === "exam", cls = state.fmt === "classroom";
+  $("#examopts").hidden = !(exam || cls);
+  $("#f-models").hidden = !exam;
+  $("#steps").hidden = !cls;
+  $("#exprev").hidden = !exam;
+  $("#out").hidden = exam;
+  if (exam) $("#exprev").innerHTML = state.selected.length ? examHTML() : '<p style="color:#666">Elige preguntas para ver el examen.</p>';
+  $("#out").value = exam ? "" : cls ? (state.selected.length ? classroomScript() : "") : exportText();
+  $("#copy").textContent = exam ? "Copiar examen con formato" : cls ? "Copiar el código" : "Copiar";
+  $("#copy").disabled = !state.selected.length;
+  let w = "";
+  if (state.fmt === "kahoot"){
+    const long = state.selected.filter(q => q.opts.some(o => o.t.length > 75) || fullStem(q).length > 120).length;
+    const five = state.selected.filter(q => q.opts.length > 4).length;
+    w = [long ? long + " demasiado largas para Kahoot (120 / 75 caracteres)" : "", five ? five + " con 5 opciones: Kahoot solo usa las 4 primeras" : ""].filter(Boolean).join(" · ");
+  }
+  $("#kwarn").textContent = w;
+}
+function toast(t){ const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast._t); toast._t = setTimeout(() => { el.hidden = true; }, 2200); }
+
+/* ===== Eventos ===== */
+$("#src").value = state.src;
+let srcT = null;
+$("#src").addEventListener("input", e => { state.src = e.target.value; clearTimeout(srcT); srcT = setTimeout(save, 400); });
+$("#types").querySelectorAll("input").forEach(i => {
+  i.checked = state.types.includes(i.value);
+  i.addEventListener("change", () => { state.types = [...$("#types").querySelectorAll("input:checked")].map(x => x.value); generate(); });
+});
+for (const [id, key] of [["#nopt", "nopt"], ["#nvar", "nvar"]]){
+  const g = $(id);
+  const paint = () => g.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.v === state[key]));
+  paint();
+  g.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state[key] = +b.dataset.v; paint(); generate(); });
+}
+$("#gen").addEventListener("click", () => { generate(); toast(pool.length + " preguntas generadas"); });
+$("#shuffle").addEventListener("click", () => { state.seed++; generate(); toast("Opciones barajadas de nuevo"); });
+$("#tfilter").addEventListener("click", e => { const b = e.target.closest("[data-t]"); if (!b) return; tfilter = b.dataset.t; shown = 60; renderTypeFilter(); renderGen(); });
+let qT = null;
+$("#q").addEventListener("input", e => { clearTimeout(qT); qT = setTimeout(() => { query = e.target.value.trim(); shown = 60; renderGen(); }, 150); });
+$("#key").addEventListener("change", e => { document.querySelectorAll(".list").forEach(l => l.classList.toggle("show-key", e.target.checked)); });
+$("#more").addEventListener("click", () => { shown += 60; renderGen(); });
+$("#pickall").addEventListener("click", () => { const vis = visible().slice(0, shown); vis.forEach(q => toggle(q, true)); renderGen(); renderSel(); toast(vis.length + " preguntas elegidas"); });
+$("#clearsel").addEventListener("click", e => {
+  const b = e.currentTarget;
+  if (b.dataset.confirm !== "1"){ b.dataset.confirm = "1"; b.textContent = "¿Seguro? Pulsa otra vez"; setTimeout(() => { b.dataset.confirm = ""; b.textContent = "Vaciar elegidas"; }, 3000); return; }
+  state.selected = []; save(); b.dataset.confirm = ""; b.textContent = "Vaciar elegidas"; renderGen(); renderSel();
+});
+for (const id of ["#list-gen", "#list-sel"]){
+  $(id).addEventListener("change", e => {
+    const cb = e.target.closest(".pick input"); if (!cb) return;
+    const card = cb.closest(".q"), q = findQ(card.dataset.id); if (!q) return;
+    toggle(q, cb.checked); card.classList.toggle("sel", cb.checked);
+    if (id === "#list-sel") renderSel(); else { renderExport(); counts(); }
+  });
+}
+function showTab(which){
+  const gen = which === "gen";
+  $("#tab-gen").setAttribute("aria-selected", gen); $("#tab-sel").setAttribute("aria-selected", !gen);
+  $("#pane-gen").hidden = !gen; $("#pane-sel").hidden = gen;
+  if (gen) renderGen(); else renderSel();
+}
+$("#tab-gen").addEventListener("click", () => showTab("gen"));
+$("#tab-sel").addEventListener("click", () => showTab("sel"));
+$("#fmt").addEventListener("click", e => { const b = e.target.closest("[data-f]"); if (!b) return; state.fmt = b.dataset.f; save(); renderExport(); });
+/* campos del examen / cuestionario */
+[["#ex-title", "exTitle"], ["#ex-course", "exCourse"], ["#ex-instr", "exInstr"]].forEach(([id, key]) => {
+  const el = $(id); el.value = state[key] || "";
+  let t = null;
+  el.addEventListener("input", () => { state[key] = el.value; clearTimeout(t); t = setTimeout(() => { save(); renderExport(); }, 250); });
+});
+{
+  const g = $("#ex-models");
+  const paint = () => g.querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", +b.dataset.v === state.models));
+  paint();
+  g.addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; state.models = +b.dataset.v; paint(); save(); renderExport(); });
+}
+$("#copy").addEventListener("click", async () => {
+  if (state.fmt === "exam"){
+    const html = '<meta charset="utf-8"><div style="font-family:Georgia,serif;font-size:12pt">' + examHTML() + '</div>';
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ "text/html": new Blob([html], { type: "text/html" }), "text/plain": new Blob([examPlain()], { type: "text/plain" }) })]);
+      toast("Examen copiado: pégalo en Word o Google Docs");
+    } catch (e) {
+      // sin permiso para copiar con formato: se selecciona la vista previa y basta con Ctrl+C
+      const range = document.createRange(); range.selectNodeContents($("#exprev"));
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      let ok = false; try { ok = document.execCommand("copy"); } catch (_) {}
+      toast(ok ? "Examen copiado: pégalo en Word o Google Docs" : "Examen seleccionado: pulsa Ctrl+C (⌘+C en Mac) y pégalo en Word o Docs");
+    }
+    return;
+  }
+  const ta = $("#out");
+  try { await navigator.clipboard.writeText(ta.value); toast(state.fmt === "classroom" ? "Código copiado: pégalo en script.google.com" : "Copiado: " + state.selected.length + " preguntas"); }
+  catch (e) { ta.focus(); ta.select(); toast("Texto seleccionado: pulsa Ctrl+C (⌘+C en Mac)"); }
+});
+
+generate();
+</script>
+</body>
+</html>
