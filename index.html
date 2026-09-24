@@ -159,7 +159,7 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var
       <div>
         <label class="lbl" for="src">Conceptos</label>
         <textarea id="src" spellcheck="false"></textarea>
-        <p class="hint">Una línea por concepto: <code>concepto: definición</code>. También sirve pegar dos columnas desde Excel o Sheets. Con <code># Tema</code> agrupas conceptos: las opciones falsas salen primero del mismo tema, para que sean creíbles. <b>Ejemplo cargado</b>, del glosario de HF.</p>
+        <p class="hint">Una línea por concepto: <code>concepto: definición</code>. También sirve pegar columnas desde Excel o Sheets. <b>Para preguntas más variadas</b>, escribe varias formas de decir la definición separadas por <code>|</code>: cada versión usará una distinta. Con <code># Tema</code> agrupas conceptos, y las opciones falsas salen primero del mismo tema. <b>Ejemplo cargado</b>: glosario de HF con dos paráfrasis por concepto.</p>
       </div>
       <div>
         <span class="lbl">Tipos de pregunta</span>
@@ -168,6 +168,7 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var
           <label class="check"><input type="checkbox" value="term" checked><span>Concepto → definición<small>«¿Cuál es la definición de…?»</small></span></label>
           <label class="check"><input type="checkbox" value="vf" checked><span>Verdadero o falso<small>una definición correcta y otra cambiada</small></span></label>
           <label class="check"><input type="checkbox" value="odd" checked><span>La pareja intrusa<small>«¿Qué pareja concepto–definición es incorrecta?»</small></span></label>
+          <label class="check"><input type="checkbox" value="neg" checked><span>¿Cuál es falsa?<small>tres formas correctas de definirlo y una intrusa; solo con paráfrasis (usa <code>|</code>)</small></span></label>
         </div>
       </div>
       <div class="row" style="justify-content:space-between">
@@ -240,44 +241,44 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var
 
 <script>
 "use strict";
-/* ===== Datos de ejemplo: glosario de Historia de la Filosofía (bloque A) del Aula ===== */
+/* ===== Datos de ejemplo: glosario de Historia de la Filosofía (bloque A) del Aula, con dos paráfrasis por concepto ===== */
 const SAMPLE = `# Metafísica
-Arkhé: Palabra que designa el origen, fundamento o principio común de todas las cosas.
-Hilozoísmo: La visión de que la materia está viva por sí misma y dotada de movimiento; los físicos de Mileto entendieron el principio como algo viviente.
-Homeomerías: Según Anaxágoras, las semillas infinitamente pequeñas que componen la realidad, cada una con algo de todas las cosas.
-El vacío: Para los atomistas, el espacio no lleno que hace posible el movimiento.
-Dualismo ontológico: Distinguir la realidad en dos niveles: el mundo sensible cambiante y el mundo inteligible e inmutable de las Ideas.
-Hilemorfismo: La teoría según la cual los seres concretos se componen de materia y forma; la forma es la estructura misma de la cosa.
-Acto y potencia: La potencia es la posibilidad de ser; el acto, el estado en que esa posibilidad está realizada.
-Motor inmóvil: El primer principio del movimiento: acto puro que, sin cambiar él mismo, atrae todo lo demás como causa final.
-Las cuatro causas: La distinción aristotélica entre causa material, formal, eficiente y final para explicar las cosas.
+Arkhé: Palabra que designa el origen, fundamento o principio común de todas las cosas. | Aquello de lo que todo procede y a lo que todo vuelve, según los primeros filósofos griegos. | El elemento primordial que los presocráticos buscaban para explicar la unidad de la naturaleza.
+Hilozoísmo: La visión de que la materia está viva por sí misma y dotada de movimiento. | La creencia de los filósofos de Mileto en que la materia posee vida propia, sin separar lo vivo de lo material. | Doctrina según la cual la naturaleza se mueve y se transforma por sí sola, porque está animada.
+Homeomerías: Según Anaxágoras, las semillas infinitamente pequeñas que componen la realidad, cada una con algo de todas las cosas. | Las partículas diminutas de las que, para Anaxágoras, está hecho todo, y en las que hay una porción de cada cosa. | Semillas de todas las sustancias que el Nous ordena para formar el mundo a partir de una mezcla inicial.
+El vacío: Para los atomistas, el espacio no lleno que hace posible el movimiento. | Lo que existe entre los átomos y les permite desplazarse, según Leucipo y Demócrito. | El no-ser que los atomistas admiten, frente a Parménides, para explicar el cambio.
+Dualismo ontológico: Distinguir la realidad en dos niveles: el mundo sensible cambiante y el mundo inteligible e inmutable de las Ideas. | La tesis platónica de que hay dos ámbitos de realidad, uno aparente y material y otro verdadero y eterno. | La división de lo real entre lo que captan los sentidos y lo que solo alcanza la razón.
+Hilemorfismo: La teoría según la cual los seres concretos se componen de materia y forma; la forma es la estructura misma de la cosa. | La doctrina aristotélica de que toda sustancia es la unión de un sustrato material y una forma que la organiza. | La explicación de los seres naturales como compuestos inseparables de materia y forma.
+Acto y potencia: La potencia es la posibilidad de ser; el acto, el estado en que esa posibilidad está realizada. | Los dos modos de ser con que Aristóteles explica el cambio: lo que algo puede llegar a ser y lo que ya es. | El par de conceptos que entiende el movimiento como el paso de una capacidad a su realización.
+Motor inmóvil: El primer principio del movimiento: acto puro que, sin cambiar él mismo, atrae todo lo demás como causa final. | Para Aristóteles, la causa primera que mueve el universo sin moverse, como objeto de deseo. | El ser perfecto, sin potencia alguna, al que tiende todo movimiento del cosmos aristotélico.
+Las cuatro causas: La distinción aristotélica entre causa material, formal, eficiente y final para explicar las cosas. | Los cuatro porqués con que Aristóteles explica algo: de qué está hecho, qué es, quién lo produce y para qué existe. | El esquema de explicación que combina materia, forma, agente y finalidad.
 # Conocimiento y método
-Doxa: La opinión o creencia corriente; se mueve en el ámbito de los sentidos y las apariencias.
-Episteme: El conocimiento verdadero, que se alcanza cuando la razón comprende las Ideas y sus conexiones.
-Abstracción: El proceso por el cual el entendimiento, partiendo de las cosas particulares, distingue la forma general.
-Mayéutica: El método que ayuda a alumbrar el pensamiento mediante preguntas.
-Ironía socrática: Fingir ignorancia para poner a prueba las creencias firmes del interlocutor.
-Logos: Idea que reúne a la vez palabra, razón y discurso, y permite dar y debatir explicaciones.
+Doxa: La opinión o creencia corriente; se mueve en el ámbito de los sentidos y las apariencias. | El saber inseguro que se apoya en lo que parece, sin razones que lo justifiquen. | Para Platón, el conocimiento propio del mundo sensible, inferior a la ciencia.
+Episteme: El conocimiento verdadero, que se alcanza cuando la razón comprende las Ideas y sus conexiones. | El saber firme y justificado que, para Platón, solo proporciona la razón. | La ciencia en sentido fuerte, opuesta a la mera opinión.
+Abstracción: El proceso por el cual el entendimiento, partiendo de las cosas particulares, distingue la forma general. | La operación con la que, según Aristóteles, la mente extrae lo universal de la experiencia sensible. | El paso del conocimiento de casos concretos al concepto común que comparten.
+Mayéutica: El método que ayuda a alumbrar el pensamiento mediante preguntas. | El arte socrático de hacer que el interlocutor descubra por sí mismo la verdad, como una partera ayuda a nacer. | El procedimiento de diálogo con el que Sócrates guía hacia una definición sin darla hecha.
+Ironía socrática: Fingir ignorancia para poner a prueba las creencias firmes del interlocutor. | La primera fase del diálogo socrático, en la que se revela que el otro no sabe lo que creía saber. | La estrategia de declararse ignorante para desmontar las opiniones aceptadas sin examen.
+Logos: Idea que reúne a la vez palabra, razón y discurso, y permite dar y debatir explicaciones. | La explicación racional del mundo que sustituye al relato mítico. | La razón que habla y argumenta, y que puede someterse a crítica pública.
 # Ética
-Areté: La excelencia o plenitud de una capacidad; en la ética clásica, la buena forma del carácter.
-Intelectualismo moral: La tesis socrática de que quien conoce de verdad el bien no obra mal a propósito.
-Ataraxia: La ausencia de perturbación y de miedo, condición de la vida buena para las escuelas helenísticas.
-Aponía: La ausencia de dolor en el cuerpo; en el epicureísmo, una condición de la vida feliz.
-Apatheia: No vivir a merced de las pasiones ciegas y cuidar el autogobierno racional, según los estoicos.
-Autarquía: La autosuficiencia razonable: depender lo menos posible de la fortuna externa.
+Areté: La excelencia o plenitud de una capacidad; en la ética clásica, la buena forma del carácter. | Lo que hace que algo o alguien cumpla bien su función; en las personas, la virtud. | La perfección propia de cada ser, que en el ser humano se identifica con la virtud.
+Intelectualismo moral: La tesis socrática de que quien conoce de verdad el bien no obra mal a propósito. | La idea de que la virtud es conocimiento y el vicio, ignorancia. | La doctrina según la cual basta saber qué es el bien para practicarlo.
+Ataraxia: La ausencia de perturbación y de miedo, condición de la vida buena para las escuelas helenísticas. | La tranquilidad del alma que buscan epicúreos, estoicos y escépticos. | El estado de serenidad interior que se logra al librarse de temores y agitaciones.
+Aponía: La ausencia de dolor en el cuerpo; en el epicureísmo, una condición de la vida feliz. | El bienestar físico que, junto con la paz del alma, forma el placer que busca Epicuro. | El estado del cuerpo libre de sufrimiento.
+Apatheia: No vivir a merced de las pasiones ciegas y cuidar el autogobierno racional, según los estoicos. | El ideal estoico de no dejarse dominar por las emociones desordenadas. | La libertad interior de quien gobierna sus pasiones mediante la razón.
+Autarquía: La autosuficiencia razonable: depender lo menos posible de la fortuna externa. | El ideal de bastarse a sí mismo, reduciendo las necesidades a lo imprescindible. | La independencia del sabio, que no necesita bienes externos para ser feliz.
 # Política
-Isonomía: El principio de que todos los ciudadanos son iguales ante la ley.
-Isegoría: El derecho igual de los ciudadanos a hablar en la asamblea.
-Nomos: La ley, la costumbre o el pacto social, frente a lo que es por naturaleza.
-Physis: La naturaleza, lo que es y crece por sí mismo, frente a la convención humana.`;
+Isonomía: El principio de que todos los ciudadanos son iguales ante la ley. | La igualdad legal de los ciudadanos, base de la democracia ateniense. | La misma ley para todos, sin privilegios de nacimiento o riqueza.
+Isegoría: El derecho igual de los ciudadanos a hablar en la asamblea. | La libertad de todo ciudadano para tomar la palabra en los asuntos públicos. | El reparto igual de la voz política en la democracia griega.
+Nomos: La ley, la costumbre o el pacto social, frente a lo que es por naturaleza. | Lo establecido por acuerdo humano y que, por eso, puede cambiar de una ciudad a otra. | La norma convencional, que los sofistas contraponen a lo natural.
+Physis: La naturaleza, lo que es y crece por sí mismo, frente a la convención humana. | Aquello que existe por sí y no por decisión de las personas. | El orden natural que, para los sofistas, se opone a las leyes creadas por acuerdo.`;
 
-const TYPES = { def: "Definición → concepto", term: "Concepto → definición", vf: "Verdadero o falso", odd: "Pareja intrusa" };
+const TYPES = { def: "Definición → concepto", term: "Concepto → definición", vf: "Verdadero o falso", odd: "Pareja intrusa", neg: "¿Cuál es falsa?" };
 const STORE = "cantera-preguntas-v1";
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fold = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 
-let state = { src: SAMPLE, types: ["def", "term", "vf", "odd"], nopt: 4, nvar: 2, seed: 1, selected: [], fmt: "exam",
+let state = { src: SAMPLE, types: ["def", "term", "vf", "odd", "neg"], nopt: 4, nvar: 2, seed: 1, selected: [], fmt: "exam",
   exTitle: "Cuestionario: filosofía antigua", exCourse: "Historia de la Filosofía · 2.º de Bachillerato",
   exInstr: "Elige una sola respuesta en cada pregunta. Cada acierto vale 1 punto.", models: 1 };
 try { const saved = JSON.parse(localStorage.getItem(STORE) || "null"); if (saved && typeof saved === "object") state = Object.assign(state, saved); } catch (e) {}
@@ -292,11 +293,16 @@ function parse(text){
     if (line.startsWith("#")) { group = line.replace(/^#+\s*/, ""); return; }
     let m = line.match(/^([^\t]+)\t+(.+)$/) || line.match(/^([^:]{1,80}):\s*(.+)$/) || line.match(/^(.{1,80}?)\s+[–—-]\s+(.+)$/);
     if (!m) { bad.push(i + 1); return; }
-    const term = m[1].trim().replace(/^[-•*]\s*/, ""), def = m[2].trim();
-    if (term && def) out.push({ term, def, group });
+    const term = m[1].trim().replace(/^[-•*]\s*/, "");
+    const defs = m[2].split(/\s+\|\s+|\t+/).map(d => d.trim()).filter(Boolean);   // varias formulaciones: «def 1 | def 2»
+    if (term && defs.length) out.push({ term, defs, group });
   });
-  const seen = new Set();
-  return { items: out.filter(c => { const k = fold(c.term); if (seen.has(k)) return false; seen.add(k); return true; }), bad };
+  // un mismo concepto en varias líneas suma sus formulaciones
+  const byKey = new Map();
+  out.forEach(c => { const k = fold(c.term); if (byKey.has(k)) byKey.get(k).defs.push(...c.defs); else byKey.set(k, c); });
+  const items = [...byKey.values()];
+  items.forEach(c => { c.defs = [...new Set(c.defs)]; c.def = c.defs[0]; });
+  return { items, bad };
 }
 
 /* ===== Azar reproducible ===== */
@@ -324,6 +330,23 @@ function mask(def, term){
   return def.replace(re, (m, pre) => pre + "……");
 }
 
+/* ===== Enunciados variados: cada pregunta toma uno al azar ===== */
+const STEMS = {
+  def: ["¿Qué concepto se define así?", "¿A qué término corresponde esta definición?", "¿Cómo se denomina lo siguiente?",
+        "¿De qué concepto se está hablando?", "Esta definición corresponde a…", "Identifica el concepto:"],
+  term: ["¿Cuál es la definición de «{t}»?", "¿Qué significa «{t}»?", "¿Qué se entiende por «{t}»?",
+         "Elige la definición correcta de «{t}»:", "¿Cuál de estas afirmaciones define mejor «{t}»?"],
+  vf: ["Verdadero o falso:", "¿Es correcta esta definición?", "Indica si es verdadero o falso:", "¿Está bien definido este concepto?"],
+  odd: ["¿Qué pareja concepto–definición es incorrecta?", "Una de estas parejas está mal emparejada. ¿Cuál?",
+        "¿En qué opción la definición NO corresponde al concepto?"],
+  neg: ["¿Cuál de estas afirmaciones sobre «{t}» es falsa?", "Todas describen «{t}» menos una. ¿Cuál?",
+        "¿Qué afirmación NO corresponde a «{t}»?"]
+};
+const stemOf = (type, r, term) => STEMS[type][Math.floor(r() * STEMS[type].length)].replace("{t}", term || "");
+/* una formulación de la definición: la versión v usa la v-ésima; las opciones falsas, una al azar */
+const defAt = (c, v) => c.defs[v % c.defs.length];
+const anyDef = (c, r) => c.defs[Math.floor(r() * c.defs.length)];
+
 /* ===== Generación ===== */
 function makeQuestions(items){
   const qs = [], k = state.nopt - 1;
@@ -331,26 +354,36 @@ function makeQuestions(items){
     for (let v = 0; v < state.nvar; v++){
       const r = rng(hash(c.term + "|" + v + "|" + state.seed));
       const ds = distractors(c, items, Math.max(k + 2, 4), r);
+      const cd = defAt(c, v);
       if (state.types.includes("def") && ds.length >= k){
         const opts = shuffle([{ t: c.term, ok: true }].concat(ds.slice(0, k).map(d => ({ t: d.term }))), r);
-        qs.push({ type: "def", concept: c.term, stem: "¿Qué concepto se define así?", quote: mask(c.def, c.term), opts });
+        qs.push({ type: "def", concept: c.term, stem: stemOf("def", r), quote: mask(cd, c.term), opts });
       }
       if (state.types.includes("term") && ds.length >= k){
-        const opts = shuffle([{ t: mask(c.def, c.term), ok: true }].concat(ds.slice(0, k).map(d => ({ t: mask(d.def, d.term) }))), r);
-        qs.push({ type: "term", concept: c.term, stem: "¿Cuál es la definición de «" + c.term + "»?", opts });
+        // con varias formulaciones, la opción correcta usa una distinta de la que aparece en «def»
+        const right = c.defs.length > 1 ? defAt(c, v + 1) : cd;
+        const opts = shuffle([{ t: mask(right, c.term), ok: true }].concat(ds.slice(0, k).map(d => ({ t: mask(anyDef(d, r), d.term) }))), r);
+        qs.push({ type: "term", concept: c.term, stem: stemOf("term", r, c.term), opts });
       }
       if (state.types.includes("vf") && ds.length){
         const wrong = r() < .5;
         const d = ds[Math.floor(r() * Math.min(ds.length, 3))];
-        qs.push({ type: "vf", concept: c.term, stem: "Verdadero o falso:", quote: c.term + ": " + (wrong ? mask(d.def, d.term) : c.def),
+        qs.push({ type: "vf", concept: c.term, stem: stemOf("vf", r), quote: c.term + ": " + (wrong ? mask(anyDef(d, r), d.term) : cd),
           opts: [{ t: "Verdadero", ok: !wrong }, { t: "Falso", ok: wrong }] });
       }
       if (state.types.includes("odd") && ds.length >= k){
         // la definición equivocada sale de un concepto que NO está entre las opciones (si no, se repetiría y delataría la respuesta)
         const others = ds.slice(0, k), spare = ds.slice(k);
         const wrongDef = spare.length ? spare[Math.floor(r() * spare.length)] : others[Math.floor(r() * others.length)];
-        const opts = shuffle([{ t: c.term + " — " + mask(wrongDef.def, wrongDef.term), ok: true }].concat(others.map(o => ({ t: o.term + " — " + mask(o.def, o.term) }))), r);
-        qs.push({ type: "odd", concept: c.term, stem: "¿Qué pareja concepto–definición es incorrecta?", opts });
+        const opts = shuffle([{ t: c.term + " — " + mask(anyDef(wrongDef, r), wrongDef.term), ok: true }].concat(others.map(o => ({ t: o.term + " — " + mask(anyDef(o, r), o.term) }))), r);
+        qs.push({ type: "odd", concept: c.term, stem: stemOf("odd", r), opts });
+      }
+      // «¿cuál es falsa?»: necesita tantas formulaciones correctas como opciones menos una (solo con paráfrasis)
+      if (state.types.includes("neg") && c.defs.length >= k && ds.length){
+        const trues = shuffle(c.defs, r).slice(0, k).map(t => ({ t: mask(t, c.term) }));
+        const d = ds[Math.floor(r() * Math.min(ds.length, 3))];
+        const opts = shuffle(trues.concat([{ t: mask(anyDef(d, r), d.term), ok: true }]), r);
+        qs.push({ type: "neg", concept: c.term, stem: stemOf("neg", r, c.term), opts });
       }
     }
   });
