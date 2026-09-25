@@ -122,6 +122,13 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var
 .export h3{font-family:var(--serif);font-size:1.05rem;margin:0}
 #out{min-height:190px;font-size:.78rem}
 .fmt-note{font-size:.82rem;color:var(--muted);margin:0}
+.gtemas{margin-top:8px;max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);padding:8px 10px;display:grid;gap:2px;font-size:.84rem}
+.gtemas .gh{font-size:.7rem;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:var(--muted);margin:6px 0 2px;display:flex;justify-content:space-between;gap:8px}
+.gtemas .gh:first-child{margin-top:0}
+.gtemas label{display:flex;gap:8px;align-items:baseline;cursor:pointer}
+.gtemas input{accent-color:var(--accent)}
+.gtemas .c{margin-left:auto;font-family:var(--mono);font-size:.74rem;color:var(--muted)}
+.gtemas .all{border:0;background:none;color:var(--accent);font-size:.72rem;padding:0;text-transform:none;letter-spacing:0}
 .examopts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 14px}
 .examopts .wide{grid-column:1/-1}
 .inp{width:100%;padding:8px 11px;border:1px solid var(--line);border-radius:9px;background:var(--surface-2);color:var(--ink);font:inherit;font-size:.9rem}
@@ -156,10 +163,27 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var
 
   <div class="layout">
     <aside class="panel side" aria-label="Conceptos y ajustes">
+      <div class="gload">
+        <label class="lbl" for="gsrc">Cargar un glosario del Aula</label>
+        <div class="row">
+          <select id="gsrc" class="inp" style="flex:1;min-width:0">
+            <option value="hf|es">Historia de la Filosofía · 2.º Bach.</option>
+            <option value="fil|es">Filosofía · 1.º Bach.</option>
+            <option value="ipc|es">Pensamiento crítico · 2.º ESO</option>
+            <option value="hf|eu">Filosofiaren Historia · Batx. 2 (euskara)</option>
+            <option value="fil|eu">Filosofia · Batx. 1 (euskara)</option>
+            <option value="ipc|eu">Pentsamendu kritikoa · DBH 2 (euskara)</option>
+            <option value="sample|es">Ejemplo con paráfrasis</option>
+          </select>
+          <button class="btn ghost small" id="gload">Cargar</button>
+        </div>
+        <div class="gtemas" id="gtemas" hidden></div>
+        <p class="hint" id="gmsg"></p>
+      </div>
       <div>
         <label class="lbl" for="src">Conceptos</label>
         <textarea id="src" spellcheck="false"></textarea>
-        <p class="hint">Una línea por concepto: <code>concepto: definición</code>. También sirve pegar columnas desde Excel o Sheets. <b>Para preguntas más variadas</b>, escribe varias formas de decir la definición separadas por <code>|</code>: cada versión usará una distinta. Con <code># Tema</code> agrupas conceptos, y las opciones falsas salen primero del mismo tema. <b>Ejemplo cargado</b>: glosario de HF con dos paráfrasis por concepto.</p>
+        <p class="hint">Una línea por concepto: <code>concepto: definición</code>. También sirve pegar columnas desde Excel o Sheets. <b>Para preguntas más variadas</b>, escribe varias formas de decir la definición separadas por <code>|</code>: cada versión usará una distinta. Con <code># Tema</code> agrupas conceptos, y las opciones falsas salen primero del mismo tema.</p>
       </div>
       <div>
         <span class="lbl">Tipos de pregunta</span>
@@ -172,6 +196,7 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var
         </div>
       </div>
       <div class="row" style="justify-content:space-between">
+        <div><span class="lbl">Idioma de las preguntas</span><div class="seg" id="qlang" role="group" aria-label="Idioma de las preguntas"><button data-v="es">Castellano</button><button data-v="eu">Euskara</button></div></div>
         <div><span class="lbl">Opciones</span><div class="seg" id="nopt" role="group" aria-label="Número de opciones"><button data-v="3">3</button><button data-v="4" aria-pressed="true">4</button><button data-v="5">5</button></div></div>
         <div><span class="lbl">Versiones por concepto</span><div class="seg" id="nvar" role="group" aria-label="Versiones por concepto y tipo"><button data-v="1">1</button><button data-v="2" aria-pressed="true">2</button><button data-v="3">3</button></div></div>
       </div>
@@ -281,7 +306,9 @@ const fold = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "
 let state = { src: SAMPLE, types: ["def", "term", "vf", "odd", "neg"], nopt: 4, nvar: 2, seed: 1, selected: [], fmt: "exam",
   exTitle: "Cuestionario: filosofía antigua", exCourse: "Historia de la Filosofía · 2.º de Bachillerato",
   exInstr: "Elige una sola respuesta en cada pregunta. Cada acierto vale 1 punto.", models: 1 };
-try { const saved = JSON.parse(localStorage.getItem(STORE) || "null"); if (saved && typeof saved === "object") state = Object.assign(state, saved); } catch (e) {}
+let firstVisit = true;
+try { const saved = JSON.parse(localStorage.getItem(STORE) || "null"); if (saved && typeof saved === "object") { state = Object.assign(state, saved); firstVisit = false; } } catch (e) {}
+if (!state.qlang) state.qlang = "es";
 function save(){ try { localStorage.setItem(STORE, JSON.stringify(state)); } catch (e) {} }
 
 /* ===== Lectura de la lista ===== */
@@ -314,9 +341,9 @@ function shuffle(arr, r){ const a = arr.slice(); for (let i = a.length - 1; i > 
 const STOP = new Set("el la los las un una unos unas de del al a en y o u que se su sus por para con sin es son lo como mas más no ni entre sobre segun según cada todo todas todos esta este esto ese esa sus".split(" "));
 const words = s => new Set(fold(s).split(/[^a-zñ]+/).filter(w => w.length > 3 && !STOP.has(w)));
 function distractors(c, all, k, r){
-  const wc = words(c.def);
+  const wc = c._w || (c._w = words(c.def));   // palabras en caché: con 300 conceptos, generar sigue siendo instantáneo
   const scored = all.filter(o => o !== c).map(o => {
-    const wo = words(o.def); let common = 0; wo.forEach(w => { if (wc.has(w)) common++; });
+    const wo = o._w || (o._w = words(o.def)); let common = 0; wo.forEach(w => { if (wc.has(w)) common++; });
     const len = 1 - Math.min(1, Math.abs(o.def.length - c.def.length) / Math.max(o.def.length, c.def.length));
     return { o, s: (o.group && o.group === c.group ? 2 : 0) + common * .6 + len + r() * 1.4 };
   }).sort((a, b) => b.s - a.s);
@@ -330,7 +357,23 @@ function mask(def, term){
   return def.replace(re, (m, pre) => pre + "……");
 }
 
-/* ===== Enunciados variados: cada pregunta toma uno al azar ===== */
+/* ===== Enunciados variados: cada pregunta toma uno al azar (castellano y euskera) ===== */
+const STEMS_EU = {
+  def: ["Zein kontzeptu definitzen da honela?", "Zein terminori dagokio definizio hau?", "Nola deitzen da honako hau?",
+        "Zein kontzepturi buruz ari da?", "Definizio hau honi dagokio:", "Identifikatu kontzeptua:"],
+  term: ["Zein da «{t}» kontzeptuaren definizioa?", "Zer esan nahi du «{t}» hitzak?", "Zer ulertzen da «{t}» esatean?",
+         "Aukeratu «{t}» kontzeptuaren definizio zuzena:", "Baieztapen hauetatik zeinek definitzen du hobekien «{t}»?"],
+  vf: ["Egia ala gezurra:", "Zuzena al da definizio hau?", "Adierazi egia ala gezurra den:", "Ondo definituta al dago kontzeptu hau?"],
+  odd: ["Zein kontzeptu–definizio bikote dago gaizki?", "Bikote hauetako bat gaizki lotuta dago. Zein?",
+        "Zein aukeratan EZ dagokio definizioa kontzeptuari?"],
+  neg: ["«{t}» kontzeptuari buruzko baieztapen hauetatik zein da faltsua?", "Guztiek deskribatzen dute «{t}», bat izan ezik. Zein?",
+        "Zein baieztapen EZ dagokio «{t}» kontzeptuari?"]
+};
+const LANG = {
+  es: { t: "Verdadero", f: "Falso", name: "Nombre y apellidos", group: "Grupo", date: "Fecha", key: "Soluciones (profesorado)", keyPlain: "SOLUCIONES", model: x => "Modelo " + x },
+  eu: { t: "Egia", f: "Gezurra", name: "Izen-abizenak", group: "Taldea", date: "Data", key: "Erantzunak (irakasleentzat)", keyPlain: "ERANTZUNAK", model: x => x + " eredua" }
+};
+const LX = () => LANG[state.qlang === "eu" ? "eu" : "es"];
 const STEMS = {
   def: ["¿Qué concepto se define así?", "¿A qué término corresponde esta definición?", "¿Cómo se denomina lo siguiente?",
         "¿De qué concepto se está hablando?", "Esta definición corresponde a…", "Identifica el concepto:"],
@@ -342,7 +385,7 @@ const STEMS = {
   neg: ["¿Cuál de estas afirmaciones sobre «{t}» es falsa?", "Todas describen «{t}» menos una. ¿Cuál?",
         "¿Qué afirmación NO corresponde a «{t}»?"]
 };
-const stemOf = (type, r, term) => STEMS[type][Math.floor(r() * STEMS[type].length)].replace("{t}", term || "");
+const stemOf = (type, r, term) => { const S = (state.qlang === "eu" ? STEMS_EU : STEMS)[type]; return S[Math.floor(r() * S.length)].replace("{t}", term || ""); };
 /* una formulación de la definición: la versión v usa la v-ésima; las opciones falsas, una al azar */
 const defAt = (c, v) => c.defs[v % c.defs.length];
 const anyDef = (c, r) => c.defs[Math.floor(r() * c.defs.length)];
@@ -369,7 +412,7 @@ function makeQuestions(items){
         const wrong = r() < .5;
         const d = ds[Math.floor(r() * Math.min(ds.length, 3))];
         qs.push({ type: "vf", concept: c.term, stem: stemOf("vf", r), quote: c.term + ": " + (wrong ? mask(anyDef(d, r), d.term) : cd),
-          opts: [{ t: "Verdadero", ok: !wrong }, { t: "Falso", ok: wrong }] });
+          opts: [{ t: LX().t, ok: !wrong }, { t: LX().f, ok: wrong }] });
       }
       if (state.types.includes("odd") && ds.length >= k){
         // la definición equivocada sale de un concepto que NO está entre las opciones (si no, se repetiría y delataría la respuesta)
@@ -472,7 +515,7 @@ function exportText(){
   if (state.fmt === "txt"){
     const body = S.map((q, i) => (i + 1) + ". " + fullStem(q) + "\n" + q.opts.map((o, j) => "   " + L[j] + ") " + o.t).join("\n")).join("\n\n");
     const key = S.map((q, i) => (i + 1) + "-" + L[q.opts.findIndex(o => o.ok)]).join("   ");
-    return body + "\n\nSOLUCIONES\n" + key;
+    return body + "\n\n" + LX().keyPlain + "\n" + key;
   }
   if (state.fmt === "gift"){
     return S.map((q, i) => {
@@ -500,27 +543,27 @@ function models(){
   if (state.models !== 2) return [{ label: "", qs: S }];
   const r = rng(hash("modeloB|" + S.map(q => q.id).join(",")));
   const B = shuffle(S, r).map(q => q.type === "vf" ? q : Object.assign({}, q, { opts: shuffle(q.opts, r) }));
-  return [{ label: "Modelo A", qs: S }, { label: "Modelo B", qs: B }];
+  return [{ label: LX().model("A"), qs: S }, { label: LX().model("B"), qs: B }];
 }
 function examHTML(){
   const L = "abcde", h = s => esc(s);
   const head = m => '<h1>' + h(state.exTitle) + (m.label ? ' · ' + h(m.label) : '') + '</h1>' +
     (state.exCourse ? '<p class="sub">' + h(state.exCourse) + '</p>' : '') +
-    '<p class="blank">Nombre y apellidos: ________________________________________ &nbsp; Grupo: ______ &nbsp; Fecha: ___________</p>' +
+    '<p class="blank">' + LX().name + ': ________________________________________ &nbsp; ' + LX().group + ': ______ &nbsp; ' + LX().date + ': ___________</p>' +
     (state.exInstr ? '<p class="instr">' + h(state.exInstr) + '</p>' : '');
   const body = m => '<ol class="qs">' + m.qs.map(q => '<li>' + h(q.stem) + (q.quote ? ' «<i>' + h(q.quote) + '</i>»' : '') +
     '<ol class="op" type="a">' + q.opts.map(o => '<li>' + h(o.t) + '</li>').join("") + '</ol></li>').join("") + '</ol>';
   const ms = models();
   const sheets = ms.map((m, i) => '<div' + (i ? ' class="model" style="page-break-before:always"' : '') + '>' + head(m) + body(m) + '</div>').join("");
-  const key = '<div class="key" style="page-break-before:always"><h2 style="font-size:16px;margin:0 0 6px">Soluciones (profesorado)</h2>' +
+  const key = '<div class="key" style="page-break-before:always"><h2 style="font-size:16px;margin:0 0 6px">' + LX().key + '</h2>' +
     ms.map(m => '<p>' + (m.label ? '<b>' + h(m.label) + ':</b> ' : '') + m.qs.map((q, i) => (i + 1) + '-' + L[q.opts.findIndex(o => o.ok)]).join(" &nbsp; ") + '</p>').join("") + '</div>';
   return sheets + key;
 }
 function examPlain(){
   const L = "abcde";
-  return models().map(m => (m.label ? m.label.toUpperCase() + "\n" : "") + state.exTitle + "\n" + state.exCourse + "\nNombre y apellidos: ______________________   Grupo: ____   Fecha: ________\n" + state.exInstr + "\n\n" +
+  return models().map(m => (m.label ? m.label.toUpperCase() + "\n" : "") + state.exTitle + "\n" + state.exCourse + "\n" + LX().name + ": ______________________   " + LX().group + ": ____   " + LX().date + ": ________\n" + state.exInstr + "\n\n" +
     m.qs.map((q, i) => (i + 1) + ". " + fullStem(q) + "\n" + q.opts.map((o, j) => "   " + L[j] + ") " + o.t).join("\n")).join("\n\n")).join("\n\n\n") +
-    "\n\nSOLUCIONES\n" + models().map(m => (m.label ? m.label + ": " : "") + m.qs.map((q, i) => (i + 1) + "-" + L[q.opts.findIndex(o => o.ok)]).join("  ")).join("\n");
+    "\n\n" + LX().keyPlain + "\n" + models().map(m => (m.label ? m.label + ": " : "") + m.qs.map((q, i) => (i + 1) + "-" + L[q.opts.findIndex(o => o.ok)]).join("  ")).join("\n");
 }
 /* ---- script de Google Apps Script que crea el cuestionario de Forms ---- */
 function classroomScript(){
@@ -641,7 +684,80 @@ $("#copy").addEventListener("click", async () => {
   catch (e) { ta.focus(); ta.select(); toast("Texto seleccionado: pulsa Ctrl+C (⌘+C en Mac)"); }
 });
 
+/* ===== Glosarios del Aula (las webs de alumnado publicadas en mikagiuri.github.io) ===== */
+const GLOS = { fil: "aula-de-filosofia-web", hf: "historia-filosofia-web", ipc: "pensamiento-critico-web" };
+let gloss = null, gkey = "";   // glosario cargado: [{t, def, tema, bloque}]
+const cleanDef = d => { const m = String(d).match(/Defini(?:ci[oó]n|zioa):\s*(.+)$/i); return (m ? m[1] : String(d).replace(/^Etimolog[ií]a:[^.]*\.\s*/i, "")).trim(); };
+async function fetchGloss(subj, lang){
+  const url = "https://mikagiuri.github.io/" + GLOS[subj] + (lang === "eu" ? "-eu" : "") + "/js/glosario.js";
+  const res = await fetch(url, { cache: "no-cache" });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const txt = await res.text();
+  const i = txt.indexOf("=", txt.indexOf("GLOSARIO"));
+  const G = JSON.parse(txt.slice(i + 1, txt.lastIndexOf(";")).trim());
+  return G.map(g => ({ t: g.t, def: cleanDef(g.def), tema: (g.tema || g.area || "Otros").replace(/^(Filosofía|Pensamiento crítico|Filosofia|Pentsamendu kritikoa) · /, ""), bloque: g.bloque || "" }))
+          .filter(g => g.t && g.def);
+}
+function gthemes(){
+  // temas en el orden en que aparecen, agrupados por bloque en HF
+  const order = [], seen = {};
+  gloss.forEach(g => { const k = g.bloque + "|" + g.tema; if (!seen[k]){ seen[k] = { bloque: g.bloque, tema: g.tema, n: 0 }; order.push(seen[k]); } seen[k].n++; });
+  return order.sort((a, b) => a.bloque.localeCompare(b.bloque));
+}
+function renderThemes(checkedAll){
+  const box = $("#gtemas"), th = gthemes(), sel = new Set(state.gtemas || []);
+  let html = "", last = null;
+  th.forEach(t => {
+    if (t.bloque !== last){ html += '<div class="gh"><span>' + (t.bloque ? "Bloque " + esc(t.bloque) : "Temas") + '</span><button class="all" data-b="' + esc(t.bloque) + '">todos / ninguno</button></div>'; last = t.bloque; }
+    const on = checkedAll || sel.has(t.tema);
+    html += '<label><input type="checkbox" data-tema="' + esc(t.tema) + '" data-b="' + esc(t.bloque) + '"' + (on ? " checked" : "") + '>' + esc(t.tema) + '<span class="c">' + t.n + '</span></label>';
+  });
+  box.innerHTML = html; box.hidden = false;
+}
+function themesToSrc(){
+  const on = new Set([...$("#gtemas").querySelectorAll("input:checked")].map(i => i.dataset.tema));
+  state.gtemas = [...on];
+  const lines = []; let last = null;
+  gloss.filter(g => on.has(g.tema)).forEach(g => {
+    if (g.tema !== last){ lines.push("# " + g.tema); last = g.tema; }
+    lines.push(g.t.includes(":") ? g.t + "\t" + g.def : g.t + ": " + g.def);
+  });
+  state.src = lines.join("\n"); $("#src").value = state.src;
+  $("#gmsg").textContent = on.size + " de " + gthemes().length + " temas · " + gloss.filter(g => on.has(g.tema)).length + " conceptos. Puedes editar la lista a mano: añade paráfrasis con «|».";
+  generate();
+}
+async function loadGloss(val, all){
+  const [subj, lang] = val.split("|");
+  state.gsrc = val;
+  if (subj === "sample"){ gloss = null; $("#gtemas").hidden = true; state.src = SAMPLE; $("#src").value = SAMPLE; setLang("es"); $("#gmsg").textContent = "Ejemplo del glosario de HF con dos paráfrasis por concepto."; generate(); return; }
+  $("#gmsg").textContent = "Cargando el glosario…";
+  try {
+    gloss = await fetchGloss(subj, lang); gkey = val;
+    setLang(lang);
+    renderThemes(all);
+    themesToSrc();
+  } catch (e) {
+    $("#gmsg").textContent = "No se ha podido cargar el glosario (" + e.message + "). Desde la vista previa de Claude no se puede; ábrela en mikagiuri.github.io/cantera-de-preguntas. Mientras, sigue la lista que ya tenías.";
+  }
+}
+function setLang(l){
+  state.qlang = l === "eu" ? "eu" : "es";
+  $("#qlang").querySelectorAll("button").forEach(b => b.setAttribute("aria-pressed", b.dataset.v === state.qlang));
+}
+$("#gsrc").value = state.gsrc || "hf|es";
+$("#gload").addEventListener("click", () => loadGloss($("#gsrc").value, true));
+$("#gtemas").addEventListener("change", e => { if (e.target.matches("input[data-tema]")) themesToSrc(); });
+$("#gtemas").addEventListener("click", e => {
+  const b = e.target.closest(".all"); if (!b) return;
+  const boxes = [...$("#gtemas").querySelectorAll('input[data-b="' + b.dataset.b + '"]')];
+  const on = !boxes.every(x => x.checked); boxes.forEach(x => { x.checked = on; }); themesToSrc();
+});
+setLang(state.qlang);
+$("#qlang").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; setLang(b.dataset.v); generate(); });
+
 generate();
+// primera visita: el glosario completo de Historia de la Filosofía (si no se puede, queda el ejemplo)
+if (firstVisit) loadGloss("hf|es", true);
 </script>
 </body>
 </html>
