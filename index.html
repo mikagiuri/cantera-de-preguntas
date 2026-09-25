@@ -122,6 +122,9 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var
 .export h3{font-family:var(--serif);font-size:1.05rem;margin:0}
 #out{min-height:190px;font-size:.78rem}
 .fmt-note{font-size:.82rem;color:var(--muted);margin:0}
+.quizmode .genonly{display:none!important}
+.q .fb{display:none;font-size:.82rem;color:var(--muted);border-left:2px solid var(--ok);padding:2px 0 2px 8px;margin-top:4px}
+.show-key .q .fb{display:block}
 .gtemas{margin-top:8px;max-height:230px;overflow:auto;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);padding:8px 10px;display:grid;gap:2px;font-size:.84rem}
 .gtemas .gh{font-size:.7rem;letter-spacing:.07em;text-transform:uppercase;font-weight:600;color:var(--muted);margin:6px 0 2px;display:flex;justify-content:space-between;gap:8px}
 .gtemas .gh:first-child{margin-top:0}
@@ -167,25 +170,36 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var
         <label class="lbl" for="gsrc">Cargar un glosario del Aula</label>
         <div class="row">
           <select id="gsrc" class="inp" style="flex:1;min-width:0">
-            <option value="hf|es">Historia de la Filosofía · 2.º Bach.</option>
-            <option value="fil|es">Filosofía · 1.º Bach.</option>
-            <option value="ipc|es">Pensamiento crítico · 2.º ESO</option>
-            <option value="hf|eu">Filosofiaren Historia · Batx. 2 (euskara)</option>
-            <option value="fil|eu">Filosofia · Batx. 1 (euskara)</option>
-            <option value="ipc|eu">Pentsamendu kritikoa · DBH 2 (euskara)</option>
-            <option value="sample|es">Ejemplo con paráfrasis</option>
+            <optgroup label="Glosarios: genera las preguntas">
+              <option value="hf|es">Historia de la Filosofía · 2.º Bach.</option>
+              <option value="fil|es">Filosofía · 1.º Bach.</option>
+              <option value="ipc|es">Pensamiento crítico · 2.º ESO</option>
+              <option value="hf|eu">Filosofiaren Historia · Batx. 2 (euskara)</option>
+              <option value="fil|eu">Filosofia · Batx. 1 (euskara)</option>
+              <option value="ipc|eu">Pentsamendu kritikoa · DBH 2 (euskara)</option>
+              <option value="sample|es">Ejemplo con paráfrasis</option>
+            </optgroup>
+            <optgroup label="Cuestionarios ya hechos: preguntas de teoría">
+              <option value="q:hf|es">Historia de la Filosofía · cuestionarios</option>
+              <option value="q:fil|es">Filosofía 1.º · cuestionarios</option>
+              <option value="q:ipc|es">Pensamiento crítico · cuestionarios</option>
+              <option value="q:hf|eu">Filosofiaren Historia · galdetegiak (euskara)</option>
+              <option value="q:fil|eu">Filosofia 1. · galdetegiak (euskara)</option>
+              <option value="q:ipc|eu">Pentsamendu kritikoa · galdetegiak (euskara)</option>
+            </optgroup>
           </select>
           <button class="btn ghost small" id="gload">Cargar</button>
         </div>
         <div class="gtemas" id="gtemas" hidden></div>
         <p class="hint" id="gmsg"></p>
       </div>
-      <div>
+      <p class="msg" id="quiznote" hidden>Estás usando <b>preguntas ya hechas</b> de los cuestionarios del Aula: no se generan, se eligen. Marca los cuestionarios de arriba y selecciona las preguntas a la derecha. «Barajar de nuevo» cambia el orden de las opciones.</p>
+      <div class="genonly">
         <label class="lbl" for="src">Conceptos</label>
         <textarea id="src" spellcheck="false"></textarea>
         <p class="hint">Una línea por concepto: <code>concepto: definición</code>. También sirve pegar columnas desde Excel o Sheets. <b>Para preguntas más variadas</b>, escribe varias formas de decir la definición separadas por <code>|</code>: cada versión usará una distinta. Con <code># Tema</code> agrupas conceptos, y las opciones falsas salen primero del mismo tema.</p>
       </div>
-      <div>
+      <div class="genonly">
         <span class="lbl">Tipos de pregunta</span>
         <div class="types" id="types">
           <label class="check"><input type="checkbox" value="def" checked><span>Definición → concepto<small>«¿Qué concepto se define así…?»</small></span></label>
@@ -197,12 +211,12 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var
       </div>
       <div class="row" style="justify-content:space-between">
         <div><span class="lbl">Idioma de las preguntas</span><div class="seg" id="qlang" role="group" aria-label="Idioma de las preguntas"><button data-v="es">Castellano</button><button data-v="eu">Euskara</button></div></div>
-        <div><span class="lbl">Opciones</span><div class="seg" id="nopt" role="group" aria-label="Número de opciones"><button data-v="3">3</button><button data-v="4" aria-pressed="true">4</button><button data-v="5">5</button></div></div>
-        <div><span class="lbl">Versiones por concepto</span><div class="seg" id="nvar" role="group" aria-label="Versiones por concepto y tipo"><button data-v="1">1</button><button data-v="2" aria-pressed="true">2</button><button data-v="3">3</button></div></div>
+        <div class="genonly"><span class="lbl">Opciones</span><div class="seg" id="nopt" role="group" aria-label="Número de opciones"><button data-v="3">3</button><button data-v="4" aria-pressed="true">4</button><button data-v="5">5</button></div></div>
+        <div class="genonly"><span class="lbl">Versiones por concepto</span><div class="seg" id="nvar" role="group" aria-label="Versiones por concepto y tipo"><button data-v="1">1</button><button data-v="2" aria-pressed="true">2</button><button data-v="3">3</button></div></div>
       </div>
       <div id="srcmsg" class="msg" hidden></div>
       <div class="row">
-        <button class="btn" id="gen">Generar preguntas</button>
+        <button class="btn genonly" id="gen">Generar preguntas</button>
         <button class="btn ghost" id="shuffle" title="Nuevas opciones falsas y otro orden; las elegidas se conservan">Barajar de nuevo</button>
       </div>
     </aside>
@@ -297,7 +311,7 @@ Isegoría: El derecho igual de los ciudadanos a hablar en la asamblea. | La libe
 Nomos: La ley, la costumbre o el pacto social, frente a lo que es por naturaleza. | Lo establecido por acuerdo humano y que, por eso, puede cambiar de una ciudad a otra. | La norma convencional, que los sofistas contraponen a lo natural.
 Physis: La naturaleza, lo que es y crece por sí mismo, frente a la convención humana. | Aquello que existe por sí y no por decisión de las personas. | El orden natural que, para los sofistas, se opone a las leyes creadas por acuerdo.`;
 
-const TYPES = { def: "Definición → concepto", term: "Concepto → definición", vf: "Verdadero o falso", odd: "Pareja intrusa", neg: "¿Cuál es falsa?" };
+const TYPES = { def: "Definición → concepto", term: "Concepto → definición", vf: "Verdadero o falso", odd: "Pareja intrusa", neg: "¿Cuál es falsa?", aula: "Cuestionario del Aula" };
 const STORE = "cantera-preguntas-v1";
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -447,6 +461,7 @@ function cardHTML(q, sel){
       (long ? '<span class="warn" title="Kahoot admite 120 caracteres en la pregunta y 75 en cada respuesta">larga para Kahoot</span>' : '') + '</div>' +
     '<div class="stem">' + esc(q.stem) + (q.quote ? ' <q>' + esc(q.quote) + '</q>' : '') + '</div>' +
     '<ol>' + q.opts.map((o, i) => '<li' + (o.ok ? ' class="ok"' : '') + '><span class="l">' + L[i] + ')</span><span>' + esc(o.t) + '</span></li>').join("") + '</ol>' +
+    (q.fb ? '<p class="fb">' + esc(q.fb) + '</p>' : '') +
   '</article>';
 }
 function visible(){
@@ -473,12 +488,17 @@ function counts(){
   $("#n-gen").textContent = visible().length; $("#n-sel").textContent = state.selected.length;
 }
 function renderTypeFilter(){
+  if (state.mode === "quiz"){ tfilter = "all"; $("#tfilter").innerHTML = ""; return; }
   const used = ["all"].concat(Object.keys(TYPES).filter(t => state.types.includes(t)));
   if (!used.includes(tfilter)) tfilter = "all";
   $("#tfilter").innerHTML = used.map(t => '<button class="chip" data-t="' + t + '" aria-pressed="' + (t === tfilter) + '">' + (t === "all" ? "Todas" : TYPES[t]) + '</button>').join("");
 }
 
 function generate(){
+  const quiz = state.mode === "quiz";
+  document.body.classList.toggle("quizmode", quiz);
+  $("#quiznote").hidden = !quiz;
+  if (quiz){ $("#srcmsg").hidden = true; items = []; pool = quizPool(); shown = 60; renderTypeFilter(); renderGen(); renderSel(); save(); return; }
   const { items: it, bad } = parse(state.src);
   items = it;
   const msg = $("#srcmsg");
@@ -520,8 +540,9 @@ function exportText(){
   if (state.fmt === "gift"){
     return S.map((q, i) => {
       const title = "::P" + (i + 1) + " · " + giftEsc(q.concept) + "::";
-      if (q.type === "vf") return title + giftEsc(fullStem(q)) + " {" + (q.opts[0].ok ? "T" : "F") + "}";
-      return title + giftEsc(fullStem(q)) + " {\n" + q.opts.map(o => "  " + (o.ok ? "=" : "~") + giftEsc(o.t)).join("\n") + "\n}";
+      const fb = q.fb ? "####" + giftEsc(q.fb) : "";
+      if (q.type === "vf") return title + giftEsc(fullStem(q)) + " {" + (q.opts[0].ok ? "T" : "F") + fb + "}";
+      return title + giftEsc(fullStem(q)) + " {\n" + q.opts.map(o => "  " + (o.ok ? "=" : "~") + giftEsc(o.t)).join("\n") + (fb ? "\n  " + fb : "") + "\n}";
     }).join("\n\n");
   }
   if (state.fmt === "kahoot"){
@@ -568,7 +589,7 @@ function examPlain(){
 /* ---- script de Google Apps Script que crea el cuestionario de Forms ---- */
 function classroomScript(){
   const data = { titulo: state.exTitle || "Cuestionario", descripcion: [state.exCourse, state.exInstr].filter(Boolean).join(" · "),
-    preguntas: state.selected.map(q => ({ p: fullStem(q), o: q.opts.map(o => o.t), c: q.opts.findIndex(o => o.ok) })) };
+    preguntas: state.selected.map(q => Object.assign({ p: fullStem(q), o: q.opts.map(o => o.t), c: q.opts.findIndex(o => o.ok) }, q.fb ? { f: q.fb } : {})) };
   return "// Cantera de preguntas → cuestionario autocorregible de Google Forms (para Google Classroom).\n" +
     "// Pega este código en script.google.com (Nuevo proyecto) y pulsa Ejecutar.\n" +
     "const DATOS = " + JSON.stringify(data, null, 1) + ";\n\n" +
@@ -580,6 +601,10 @@ function classroomScript(){
     "    const item = form.addMultipleChoiceItem();\n" +
     "    item.setTitle(q.p).setPoints(1).setRequired(true);\n" +
     "    item.setChoices(q.o.map(function (t, i) { return item.createChoice(t, i === q.c); }));\n" +
+    "    if (q.f) {   // explicación que ve el alumnado al revisar sus respuestas\n" +
+    "      const fb = FormApp.createFeedback().setText(q.f).build();\n" +
+    "      item.setFeedbackForCorrect(fb).setFeedbackForIncorrect(fb);\n" +
+    "    }\n" +
     "  });\n" +
     "  Logger.log('Editar el formulario: ' + form.getEditUrl());\n" +
     "  Logger.log('Enlace para el alumnado: ' + form.getPublishedUrl());\n" +
@@ -726,7 +751,66 @@ function themesToSrc(){
   $("#gmsg").textContent = on.size + " de " + gthemes().length + " temas · " + gloss.filter(g => on.has(g.tema)).length + " conceptos. Puedes editar la lista a mano: añade paráfrasis con «|».";
   generate();
 }
+/* ===== Cuestionarios ya hechos del Aula (QUIZZES en el data.js de cada web) ===== */
+let quizData = null;   // [{key, name, block, items:[{q, o, a, fb}]}]
+async function fetchQuizzes(subj, lang){
+  const url = "https://mikagiuri.github.io/" + GLOS[subj] + (lang === "eu" ? "-eu" : "") + "/js/data.js";
+  const res = await fetch(url, { cache: "no-cache" });
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const txt = await res.text();
+  const i = txt.indexOf("const QUIZZES = ");
+  if (i < 0) throw new Error("sin cuestionarios");
+  const rest = txt.slice(i + 16), j = rest.indexOf(";\nconst ");
+  const Q = JSON.parse((j < 0 ? rest.slice(0, rest.lastIndexOf(";")) : rest.slice(0, j)).trim());
+  return Object.entries(Q).map(([key, q]) => ({ key, name: q.name, block: q.block || "", items: (q.items || []).filter(it => it && it.q && Array.isArray(it.o)) }))
+    .filter(q => q.items.length).sort((a, b) => a.block.localeCompare(b.block));
+}
+function quizPool(){
+  if (!quizData) return [];
+  const on = new Set(state.gtemas || []), out = [];
+  quizData.filter(z => on.has(z.key)).forEach(z => z.items.forEach(it => {
+    let opts = it.o.map((t, i) => ({ t, ok: i === it.a }));
+    if (state.seed > 1) opts = shuffle(opts, rng(hash(it.q + "|" + state.seed)));
+    const q = { type: "aula", concept: z.name, stem: it.q, opts, fb: it.fb || "" };
+    q.id = hash("aula" + q.stem + q.opts.map(o => o.t + (o.ok ? "*" : "")).join("|")).toString(36);
+    out.push(q);
+  }));
+  return out;
+}
+function renderQuizList(all){
+  const box = $("#gtemas"), sel = new Set(state.gtemas || []);
+  if (all) state.gtemas = quizData.map(z => z.key);
+  let html = "", last = null;
+  quizData.forEach(z => {
+    if (z.block !== last){ html += '<div class="gh"><span>' + (z.block ? "Bloque " + esc(z.block) : "Cuestionarios") + '</span><button class="all" data-b="' + esc(z.block) + '">todos / ninguno</button></div>'; last = z.block; }
+    html += '<label><input type="checkbox" data-tema="' + esc(z.key) + '" data-b="' + esc(z.block) + '"' + (all || sel.has(z.key) ? " checked" : "") + '>' + esc(z.name) + '<span class="c">' + z.items.length + '</span></label>';
+  });
+  box.innerHTML = html; box.hidden = false;
+}
+function quizSelChanged(){
+  state.gtemas = [...$("#gtemas").querySelectorAll("input:checked")].map(i => i.dataset.tema);
+  const n = quizData.filter(z => state.gtemas.includes(z.key)).reduce((s, z) => s + z.items.length, 0);
+  $("#gmsg").textContent = state.gtemas.length + " de " + quizData.length + " cuestionarios · " + n + " preguntas ya hechas, con su explicación.";
+  generate();
+}
+async function loadQuizzes(val, all){
+  const [subj, lang] = val.split("|");
+  state.gsrc = "q:" + val; state.mode = "quiz";
+  $("#gmsg").textContent = "Cargando los cuestionarios…";
+  try {
+    quizData = await fetchQuizzes(subj, lang);
+    setLang(lang);
+    renderQuizList(all);
+    quizSelChanged();
+  } catch (e) {
+    state.mode = "gen"; generate();
+    $("#gmsg").textContent = "No se han podido cargar los cuestionarios (" + e.message + "). Desde la vista previa de Claude no se puede; ábrela en mikagiuri.github.io/cantera-de-preguntas.";
+  }
+}
+
 async function loadGloss(val, all){
+  if (val.startsWith("q:")) return loadQuizzes(val.slice(2), all);
+  state.mode = "gen";
   const [subj, lang] = val.split("|");
   state.gsrc = val;
   if (subj === "sample"){ gloss = null; $("#gtemas").hidden = true; state.src = SAMPLE; $("#src").value = SAMPLE; setLang("es"); $("#gmsg").textContent = "Ejemplo del glosario de HF con dos paráfrasis por concepto."; generate(); return; }
@@ -746,18 +830,20 @@ function setLang(l){
 }
 $("#gsrc").value = state.gsrc || "hf|es";
 $("#gload").addEventListener("click", () => loadGloss($("#gsrc").value, true));
-$("#gtemas").addEventListener("change", e => { if (e.target.matches("input[data-tema]")) themesToSrc(); });
+const onThemes = () => state.mode === "quiz" ? quizSelChanged() : themesToSrc();
+$("#gtemas").addEventListener("change", e => { if (e.target.matches("input[data-tema]")) onThemes(); });
 $("#gtemas").addEventListener("click", e => {
   const b = e.target.closest(".all"); if (!b) return;
   const boxes = [...$("#gtemas").querySelectorAll('input[data-b="' + b.dataset.b + '"]')];
-  const on = !boxes.every(x => x.checked); boxes.forEach(x => { x.checked = on; }); themesToSrc();
+  const on = !boxes.every(x => x.checked); boxes.forEach(x => { x.checked = on; }); onThemes();
 });
 setLang(state.qlang);
 $("#qlang").addEventListener("click", e => { const b = e.target.closest("button"); if (!b) return; setLang(b.dataset.v); generate(); });
 
-generate();
-// primera visita: el glosario completo de Historia de la Filosofía (si no se puede, queda el ejemplo)
-if (firstVisit) loadGloss("hf|es", true);
+// primera visita: el glosario completo de Historia de la Filosofía (si no se puede, queda el ejemplo);
+// si la última vez se usaban cuestionarios ya hechos, se vuelven a cargar con la misma selección
+if (state.mode === "quiz" && state.gsrc && state.gsrc.startsWith("q:")){ state.mode = "gen"; generate(); loadQuizzes(state.gsrc.slice(2), false); }
+else { state.mode = "gen"; generate(); if (firstVisit) loadGloss("hf|es", true); }
 </script>
 </body>
 </html>
