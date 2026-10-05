@@ -107,6 +107,19 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var
 .q .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;font-size:.72rem;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);font-weight:600}
 .q .meta .t{color:var(--accent)}
 .q .meta .warn{color:var(--warn);text-transform:none;letter-spacing:0;font-weight:500}
+.q > :not(.pick){grid-column:2;min-width:0}   /* la explicación (.fb) no cae bajo la casilla */
+.q .pick{grid-row:1 / span 4}
+.q .meta .trap{color:var(--warn);background:var(--warn-bg);border-radius:999px;padding:0 7px}
+.q .meta .ed{color:var(--ok);background:var(--ok-bg);border-radius:999px;padding:0 7px}
+.q .meta .edit{margin-left:auto;text-transform:none;letter-spacing:0}
+.q.editing{display:block;border-color:var(--accent)}
+.editor{display:grid;gap:6px}
+.editor .lbl{margin:4px 0 0}
+.editor textarea{font-family:var(--sans);font-size:.88rem;line-height:1.45;min-height:2.8em;padding:7px 10px}
+.e-opt{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start}
+.e-opt label{display:flex;gap:5px;align-items:center;padding-top:8px;font-family:var(--mono);font-size:.82rem;color:var(--muted);cursor:pointer}
+.e-opt input{accent-color:var(--ok)}
+.formopts{gap:6px 16px}
 .q .stem{font-family:var(--serif);font-size:1.02rem;line-height:1.45}
 .q .stem q{quotes:"«" "»";font-style:italic}
 .q ol{list-style:none;margin:4px 0 0;padding:0;display:grid;gap:3px;font-size:.88rem}
@@ -240,7 +253,7 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var
 
       <div class="pane" id="pane-sel" role="tabpanel" aria-labelledby="tab-sel" hidden>
         <div class="toolbar">
-          <span class="fmt-note" id="sel-note">Las preguntas que marques en «Generadas» se guardan aquí, aunque vuelvas a barajar.</span>
+          <span class="fmt-note" id="sel-note">Las preguntas que marques en «Generadas» se guardan aquí, aunque vuelvas a barajar. Con «Editar» cambias el enunciado, las opciones o la respuesta correcta antes de exportar.</span>
           <button class="btn ghost small" id="clearsel">Vaciar elegidas</button>
         </div>
         <div class="list show-key" id="list-sel"></div>
@@ -260,6 +273,13 @@ textarea:focus{outline:2px solid var(--accent);outline-offset:0;border-color:var
             <div class="field"><label class="lbl" for="ex-course">Materia y curso</label><input id="ex-course" class="inp" type="text"></div>
             <div class="field wide" id="f-instr"><label class="lbl" for="ex-instr">Instrucciones</label><input id="ex-instr" class="inp" type="text"></div>
             <div class="field" id="f-models"><span class="lbl">Modelos</span><div class="seg" id="ex-models" role="group" aria-label="Número de modelos"><button data-v="1">Uno</button><button data-v="2">A y B</button></div></div>
+            <div class="field wide" id="f-form" hidden><span class="lbl">Ajustes del formulario</span>
+              <div class="row formopts">
+                <label class="toggle"><input type="checkbox" id="fo-email" data-k="fEmail"> Recoger el correo (verificado)</label>
+                <label class="toggle"><input type="checkbox" id="fo-once" data-k="fOnce"> Una sola respuesta por alumno</label>
+                <label class="toggle"><input type="checkbox" id="fo-shuf" data-k="fShuf"> Barajar las preguntas</label>
+              </div>
+            </div>
           </div>
           <p class="fmt-note" id="fmt-note"></p>
           <ol class="steps" id="steps" hidden>
@@ -311,6 +331,8 @@ Isegoría: El derecho igual de los ciudadanos a hablar en la asamblea. | La libe
 Nomos: La ley, la costumbre o el pacto social, frente a lo que es por naturaleza. | Lo establecido por acuerdo humano y que, por eso, puede cambiar de una ciudad a otra. | La norma convencional, que los sofistas contraponen a lo natural.
 Physis: La naturaleza, lo que es y crece por sí mismo, frente a la convención humana. | Aquello que existe por sí y no por decisión de las personas. | El orden natural que, para los sofistas, se opone a las leyes creadas por acuerdo.`;
 
+/* casos trampa del ejemplo (en los glosarios del Aula vienen de GLOSARIO_TRAMPAS) */
+const SAMPLE_TRAPS = [["Doxa", "Episteme"], ["Ataraxia", "Apatheia"], ["Aponía", "Ataraxia"], ["Isonomía", "Isegoría"], ["Nomos", "Physis"], ["Hilemorfismo", "Acto y potencia"], ["Mayéutica", "Ironía socrática"]];
 const TYPES = { def: "Definición → concepto", term: "Concepto → definición", vf: "Verdadero o falso", odd: "Pareja intrusa", neg: "¿Cuál es falsa?", aula: "Cuestionario del Aula" };
 const STORE = "cantera-preguntas-v1";
 const $ = s => document.querySelector(s);
@@ -354,12 +376,17 @@ function shuffle(arr, r){ const a = arr.slice(); for (let i = a.length - 1; i > 
 /* ===== Opciones falsas creíbles: mismo tema, palabras en común y longitud parecida ===== */
 const STOP = new Set("el la los las un una unos unas de del al a en y o u que se su sus por para con sin es son lo como mas más no ni entre sobre segun según cada todo todas todos esta este esto ese esa sus".split(" "));
 const words = s => new Set(fold(s).split(/[^a-zñ]+/).filter(w => w.length > 3 && !STOP.has(w)));
+/* casos trampa: parejas de conceptos que se confunden (GLOSARIO_TRAMPAS de las webs del Aula). Si la pareja
+   del concepto está en la lista, entra siempre entre las opciones falsas y la pregunta se marca «caso trampa». */
+let TRAP = new Set();
+function buildTraps(){ TRAP = new Set(); (state.traps || []).forEach(([a, b]) => { TRAP.add(fold(a) + "|" + fold(b)); TRAP.add(fold(b) + "|" + fold(a)); }); }
+const isTrap = (a, b) => TRAP.has(fold(a) + "|" + fold(b));
 function distractors(c, all, k, r){
   const wc = c._w || (c._w = words(c.def));   // palabras en caché: con 300 conceptos, generar sigue siendo instantáneo
   const scored = all.filter(o => o !== c).map(o => {
     const wo = o._w || (o._w = words(o.def)); let common = 0; wo.forEach(w => { if (wc.has(w)) common++; });
     const len = 1 - Math.min(1, Math.abs(o.def.length - c.def.length) / Math.max(o.def.length, c.def.length));
-    return { o, s: (o.group && o.group === c.group ? 2 : 0) + common * .6 + len + r() * 1.4 };
+    return { o, s: (isTrap(c.term, o.term) ? 10 : 0) + (o.group && o.group === c.group ? 2 : 0) + common * .6 + len + r() * 1.4 };
   }).sort((a, b) => b.s - a.s);
   return scored.slice(0, k).map(x => x.o);
 }
@@ -445,6 +472,8 @@ function makeQuestions(items){
     }
   });
   qs.forEach(q => { q.id = hash(q.type + q.stem + (q.quote || "") + q.opts.map(o => o.t + (o.ok ? "*" : "")).join("|")).toString(36); });
+  // caso trampa: entre las opciones de «definición → concepto» está la pareja con la que se confunde
+  qs.forEach(q => { if (q.type === "def" && q.opts.some(o => !o.ok && isTrap(q.concept, o.t))) q.trap = true; });
   return qs;
 }
 
@@ -452,13 +481,16 @@ function makeQuestions(items){
 let items = [], pool = [], shown = 60, tfilter = "all", query = "";
 const selIds = () => new Set(state.selected.map(q => q.id));
 
-function cardHTML(q, sel){
+function cardHTML(q, sel, editable){
   const L = "abcde";
   const long = q.opts.some(o => o.t.length > 75) || (q.stem + " " + (q.quote || "")).length > 120;
   return '<article class="q' + (sel ? " sel" : "") + '" data-id="' + q.id + '">' +
     '<label class="pick"><input type="checkbox"' + (sel ? " checked" : "") + ' aria-label="Elegir esta pregunta"></label>' +
     '<div class="meta"><span class="t">' + TYPES[q.type] + '</span><span>' + esc(q.concept) + '</span>' +
-      (long ? '<span class="warn" title="Kahoot admite 120 caracteres en la pregunta y 75 en cada respuesta">larga para Kahoot</span>' : '') + '</div>' +
+      (q.trap ? '<span class="trap" title="Entre las opciones está el concepto con el que más se confunde">caso trampa</span>' : '') +
+      (q.edited ? '<span class="ed">editada</span>' : '') +
+      (long ? '<span class="warn" title="Kahoot admite 120 caracteres en la pregunta y 75 en cada respuesta">larga para Kahoot</span>' : '') +
+      (editable ? '<button class="btn ghost small edit" data-edit>Editar</button>' : '') + '</div>' +
     '<div class="stem">' + esc(q.stem) + (q.quote ? ' <q>' + esc(q.quote) + '</q>' : '') + '</div>' +
     '<ol>' + q.opts.map((o, i) => '<li' + (o.ok ? ' class="ok"' : '') + '><span class="l">' + L[i] + ')</span><span>' + esc(o.t) + '</span></li>').join("") + '</ol>' +
     (q.fb ? '<p class="fb">' + esc(q.fb) + '</p>' : '') +
@@ -479,9 +511,33 @@ function renderGen(){
 }
 function renderSel(){
   const box = $("#list-sel");
-  box.innerHTML = state.selected.length ? state.selected.map(q => cardHTML(q, true)).join("")
+  box.innerHTML = state.selected.length ? state.selected.map(q => cardHTML(q, true, true)).join("")
     : '<p class="empty">Aún no has elegido ninguna. Marca las casillas en «Generadas».</p>';
   renderExport(); counts();
+}
+/* ===== Editar una pregunta elegida antes de exportarla: enunciado, cita, opciones, correcta y explicación ===== */
+function editorHTML(q){
+  const L = "abcde", ta = (cls, v, lbl) => '<textarea class="' + cls + '" rows="2" aria-label="' + lbl + '">' + esc(v || "") + '</textarea>';
+  return '<div class="editor">' +
+    '<span class="lbl">Editando · ' + esc(TYPES[q.type]) + ' · ' + esc(q.concept) + '</span>' +
+    '<label class="lbl">Enunciado</label>' + ta("e-stem", q.stem, "Enunciado") +
+    (q.quote !== undefined ? '<label class="lbl">Texto citado</label>' + ta("e-quote", q.quote, "Texto citado") : '') +
+    '<span class="lbl">Opciones (marca la correcta)</span>' +
+    q.opts.map((o, i) => '<div class="e-opt"><label><input type="radio" name="ok-' + q.id + '" value="' + i + '"' + (o.ok ? " checked" : "") + '> ' + L[i] + ')</label>' + ta("e-o", o.t, "Opción " + L[i]) + '</div>').join("") +
+    '<label class="lbl">Explicación (opcional; sale en Forms y Moodle)</label>' + ta("e-fb", q.fb, "Explicación") +
+    '<div class="row"><button class="btn small" data-save>Guardar cambios</button><button class="btn ghost small" data-cancel>Cancelar</button></div>' +
+  '</div>';
+}
+function saveEdit(card, q){
+  const v = s => (card.querySelector(s) ? card.querySelector(s).value.trim() : "");
+  const texts = [...card.querySelectorAll(".e-o")].map(t => t.value.trim());
+  const okIdx = +((card.querySelector('input[type="radio"]:checked') || {}).value || 0);
+  if (!v(".e-stem") || texts.some(t => !t)){ toast("El enunciado y las opciones no pueden quedar vacíos"); return false; }
+  q.stem = v(".e-stem");
+  if (q.quote !== undefined){ const qt = v(".e-quote"); if (qt) q.quote = qt; else delete q.quote; }
+  q.opts = texts.map((t, i) => ({ t, ok: i === okIdx }));
+  const fb = v(".e-fb"); if (fb) q.fb = fb; else delete q.fb;
+  q.edited = true; save(); return true;
 }
 function counts(){
   $("#st-c").textContent = items.length; $("#st-q").textContent = pool.length; $("#st-s").textContent = state.selected.length;
@@ -500,7 +556,7 @@ function generate(){
   $("#quiznote").hidden = !quiz;
   if (quiz){ $("#srcmsg").hidden = true; items = []; pool = quizPool(); shown = 60; renderTypeFilter(); renderGen(); renderSel(); save(); return; }
   const { items: it, bad } = parse(state.src);
-  items = it;
+  items = it; buildTraps();
   const msg = $("#srcmsg");
   const notes = [];
   if (bad.length) notes.push("No entiendo " + (bad.length === 1 ? "la línea " : "las líneas ") + bad.slice(0, 8).join(", ") + (bad.length > 8 ? "…" : "") + ": escribe «concepto: definición».");
@@ -521,7 +577,7 @@ function findQ(id){ return pool.find(q => q.id === id) || state.selected.find(q 
 /* ===== Exportación ===== */
 const NOTES = {
   exam: "Examen listo para imprimir: encabezado, espacio para el nombre, preguntas numeradas y la hoja de soluciones al final. «Copiar» lo copia con formato: pégalo en un documento de Word o Google Docs en blanco. Con «A y B» salen dos modelos con las preguntas y las opciones en distinto orden, cada uno con su clave.",
-  classroom: "Crea un cuestionario autocorregible de Google Forms (1 punto por pregunta, respuestas correctas ya marcadas) que se adjunta a una tarea de Classroom. Se hace una sola vez con este código:",
+  classroom: "Crea un cuestionario autocorregible de Google Forms (preguntas obligatorias, 1 punto cada una, respuestas correctas ya marcadas) que se adjunta a una tarea de Classroom. Elige los ajustes de abajo; el código cambia al momento. Se hace una sola vez con este código:",
   txt: "Texto sin formato, numerado y con la clave al final: útil para pegar en cualquier sitio.",
   kahoot: "Filas separadas por tabuladores con el orden de la plantilla de Kahoot (pregunta, 4 respuestas, tiempo, respuesta correcta). Descarga la plantilla de Kahoot, pega en la primera fila de preguntas y súbela.",
   gift: "Formato GIFT: en Moodle, Banco de preguntas → Importar → GIFT. Pega el texto en un archivo .txt en UTF-8.",
@@ -587,6 +643,8 @@ function examPlain(){
     "\n\n" + LX().keyPlain + "\n" + models().map(m => (m.label ? m.label + ": " : "") + m.qs.map((q, i) => (i + 1) + "-" + L[q.opts.findIndex(o => o.ok)]).join("  ")).join("\n");
 }
 /* ---- script de Google Apps Script que crea el cuestionario de Forms ---- */
+/* ajustes del formulario (05-10, idea del generador de lexicoSOFÍA de @amaiafilo): activados salvo que se desmarquen */
+const formOpt = k => state[k] !== false;
 function classroomScript(){
   const data = { titulo: state.exTitle || "Cuestionario", descripcion: [state.exCourse, state.exInstr].filter(Boolean).join(" · "),
     preguntas: state.selected.map(q => Object.assign({ p: fullStem(q), o: q.opts.map(o => o.t), c: q.opts.findIndex(o => o.ok) }, q.fb ? { f: q.fb } : {})) };
@@ -597,6 +655,9 @@ function classroomScript(){
     "  const form = FormApp.create(DATOS.titulo);\n" +
     "  form.setDescription(DATOS.descripcion);\n" +
     "  form.setIsQuiz(true);\n" +
+    (formOpt("fEmail") ? "  form.setEmailCollectionType(FormApp.EmailCollectionType.VERIFIED);   // recoge el correo verificado\n" : "") +
+    (formOpt("fOnce") ? "  form.setLimitOneResponsePerUser(true);   // una sola respuesta por alumno (pide iniciar sesión con Google)\n" : "") +
+    (formOpt("fShuf") ? "  form.setShuffleQuestions(true);   // preguntas en orden aleatorio\n" : "") +
     "  DATOS.preguntas.forEach(function (q) {\n" +
     "    const item = form.addMultipleChoiceItem();\n" +
     "    item.setTitle(q.p).setPoints(1).setRequired(true);\n" +
@@ -616,6 +677,8 @@ function renderExport(){
   const exam = state.fmt === "exam", cls = state.fmt === "classroom";
   $("#examopts").hidden = !(exam || cls);
   $("#f-models").hidden = !exam;
+  $("#f-form").hidden = !cls;
+  $("#f-form").querySelectorAll("input").forEach(i => { i.checked = formOpt(i.dataset.k); });
   $("#steps").hidden = !cls;
   $("#exprev").hidden = !exam;
   $("#out").hidden = exam;
@@ -677,6 +740,16 @@ function showTab(which){
 $("#tab-gen").addEventListener("click", () => showTab("gen"));
 $("#tab-sel").addEventListener("click", () => showTab("sel"));
 $("#fmt").addEventListener("click", e => { const b = e.target.closest("[data-f]"); if (!b) return; state.fmt = b.dataset.f; save(); renderExport(); });
+$("#f-form").addEventListener("change", e => { const i = e.target.closest("input[data-k]"); if (!i) return; state[i.dataset.k] = i.checked; save(); renderExport(); });
+/* editar una elegida: «Editar» abre el editor dentro de la tarjeta; «Guardar cambios» o «Cancelar» la cierran */
+$("#list-sel").addEventListener("click", e => {
+  const b = e.target.closest("[data-edit],[data-save],[data-cancel]"); if (!b) return;
+  const card = b.closest(".q"), q = state.selected.find(x => x.id === card.dataset.id); if (!q) return;
+  if (b.hasAttribute("data-edit")){ card.classList.add("editing"); card.innerHTML = editorHTML(q); card.querySelector(".e-stem").focus(); return; }
+  if (b.hasAttribute("data-save") && !saveEdit(card, q)) return;
+  renderSel(); renderGen();
+  if (b.hasAttribute("data-save")) toast("Pregunta guardada");
+});
 /* campos del examen / cuestionario */
 [["#ex-title", "exTitle"], ["#ex-course", "exCourse"], ["#ex-instr", "exInstr"]].forEach(([id, key]) => {
   const el = $(id); el.value = state[key] || "";
@@ -713,15 +786,25 @@ $("#copy").addEventListener("click", async () => {
 const GLOS = { fil: "aula-de-filosofia-web", hf: "historia-filosofia-web", ipc: "pensamiento-critico-web" };
 let gloss = null, gkey = "";   // glosario cargado: [{t, def, tema, bloque}]
 const cleanDef = d => { const m = String(d).match(/Defini(?:ci[oó]n|zioa):\s*(.+)$/i); return (m ? m[1] : String(d).replace(/^Etimolog[ií]a:[^.]*\.\s*/i, "")).trim(); };
+/* lee «const NOMBRE = <JSON>;» de un .js de datos de las webs (cada constante empieza en su línea).
+   Desde el 05-10 glosario.js lleva también GLOSARIO_TRAMPAS detrás de GLOSARIO: no se puede leer hasta el último «;». */
+function jsConst(txt, name){
+  const i = txt.indexOf("const " + name + " = "); if (i < 0) return null;
+  const rest = txt.slice(i + name.length + 9), j = rest.indexOf(";\nconst ");
+  return JSON.parse((j < 0 ? rest.slice(0, rest.lastIndexOf(";")) : rest.slice(0, j)).trim());
+}
 async function fetchGloss(subj, lang){
   const url = "https://mikagiuri.github.io/" + GLOS[subj] + (lang === "eu" ? "-eu" : "") + "/js/glosario.js";
   const res = await fetch(url, { cache: "no-cache" });
   if (!res.ok) throw new Error("HTTP " + res.status);
-  const txt = await res.text();
-  const i = txt.indexOf("=", txt.indexOf("GLOSARIO"));
-  const G = JSON.parse(txt.slice(i + 1, txt.lastIndexOf(";")).trim());
-  return G.map(g => ({ t: g.t, def: cleanDef(g.def), tema: (g.tema || g.area || "Otros").replace(/^(Filosofía|Pensamiento crítico|Filosofia|Pentsamendu kritikoa) · /, ""), bloque: g.bloque || "" }))
+  const txt = await res.text().then(t => t.replace(/\r\n/g, "\n"));
+  const G = jsConst(txt, "GLOSARIO");
+  if (!Array.isArray(G)) throw new Error("glosario sin datos");
+  let traps = [];
+  try { const T = jsConst(txt, "GLOSARIO_TRAMPAS"); traps = (T && T[subj]) || []; } catch (e) {}   // webs anteriores al 05-10: sin parejas
+  const list = G.map(g => ({ t: g.t, def: cleanDef(g.def), tema: (g.tema || g.area || "Otros").replace(/^(Filosofía|Pensamiento crítico|Filosofia|Pentsamendu kritikoa) · /, ""), bloque: g.bloque || "" }))
           .filter(g => g.t && g.def);
+  return { list, traps };
 }
 function gthemes(){
   // temas en el orden en que aparecen, agrupados por bloque en HF
@@ -757,11 +840,9 @@ async function fetchQuizzes(subj, lang){
   const url = "https://mikagiuri.github.io/" + GLOS[subj] + (lang === "eu" ? "-eu" : "") + "/js/data.js";
   const res = await fetch(url, { cache: "no-cache" });
   if (!res.ok) throw new Error("HTTP " + res.status);
-  const txt = await res.text();
-  const i = txt.indexOf("const QUIZZES = ");
-  if (i < 0) throw new Error("sin cuestionarios");
-  const rest = txt.slice(i + 16), j = rest.indexOf(";\nconst ");
-  const Q = JSON.parse((j < 0 ? rest.slice(0, rest.lastIndexOf(";")) : rest.slice(0, j)).trim());
+  const txt = await res.text().then(t => t.replace(/\r\n/g, "\n"));
+  const Q = jsConst(txt, "QUIZZES");
+  if (!Q) throw new Error("sin cuestionarios");
   return Object.entries(Q).map(([key, q]) => ({ key, name: q.name, block: q.block || "", items: (q.items || []).filter(it => it && it.q && Array.isArray(it.o)) }))
     .filter(q => q.items.length).sort((a, b) => a.block.localeCompare(b.block));
 }
@@ -813,10 +894,10 @@ async function loadGloss(val, all){
   state.mode = "gen";
   const [subj, lang] = val.split("|");
   state.gsrc = val;
-  if (subj === "sample"){ gloss = null; $("#gtemas").hidden = true; state.src = SAMPLE; $("#src").value = SAMPLE; setLang("es"); $("#gmsg").textContent = "Ejemplo del glosario de HF con dos paráfrasis por concepto."; generate(); return; }
+  if (subj === "sample"){ gloss = null; state.traps = SAMPLE_TRAPS; $("#gtemas").hidden = true; state.src = SAMPLE; $("#src").value = SAMPLE; setLang("es"); $("#gmsg").textContent = "Ejemplo del glosario de HF con dos paráfrasis por concepto."; generate(); return; }
   $("#gmsg").textContent = "Cargando el glosario…";
   try {
-    gloss = await fetchGloss(subj, lang); gkey = val;
+    const g = await fetchGloss(subj, lang); gloss = g.list; state.traps = g.traps; gkey = val;
     setLang(lang);
     renderThemes(all);
     themesToSrc();
